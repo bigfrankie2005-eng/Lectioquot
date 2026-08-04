@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#dcc99a">
+<title>Lectio Quotidiana</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Gentium+Plus:ital,wght@0,400;0,700;1,400&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --parchment: #e8dcb8;
+    --parchment-dark: #dcc99a;
+    --ink: #2b2119;
+    --ink-soft: #4a3f34;
+    --rubric: #9c2b26;
+    --rubric-soft: #b5453f;
+    --gold: #93701f;
+    --gold-bright: #b8912f;
+    --sage: #55603f;
+    --card-shadow: 0 1px 2px rgba(43,33,25,0.15), 0 12px 32px -12px rgba(43,33,25,0.35);
+    --display-font: 'Cormorant Garamond', serif;
+    --body-font: 'EB Garamond', serif;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; background: var(--parchment); color: var(--ink); font-family: var(--body-font); min-height:100vh; }
+  body{ background-image: radial-gradient(ellipse at 20% 10%, rgba(255,255,255,0.10), transparent 55%), radial-gradient(ellipse at 85% 90%, rgba(0,0,0,0.06), transparent 50%); }
+  .grain{ position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0.05; mix-blend-mode: multiply; }
+  .wrap{ position: relative; z-index: 1; max-width: 640px; margin: 0 auto; padding: 28px 18px 64px; }
+  header.page-head{ display:flex; align-items:center; justify-content:space-between; border-bottom: 1px solid rgba(43,33,25,0.25); padding-bottom: 10px; margin-bottom: 18px; gap: 10px; flex-wrap: wrap; }
+  .brand{ font-family: 'Cormorant Garamond', serif; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; font-size: 15px; color: var(--ink-soft); }
+  .head-right{ display:flex; align-items:center; gap: 12px; flex-wrap: wrap; }
+  .streak-tally{ display:flex; align-items:center; gap:8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--gold); white-space: nowrap; }
+  .streak-marks{ letter-spacing: 1px; font-size: 13px; }
+  .streak-marks .tick{ color: var(--rubric); }
+  .menu-btn{ background: transparent; border: 1px solid rgba(43,33,25,0.35); color: var(--ink-soft); font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; padding: 7px 10px; border-radius: 2px; cursor: pointer; }
+  .menu-btn:hover{ background: rgba(43,33,25,0.06); }
+
+  .lang-toggle{ display:flex; border: 1px solid var(--gold); border-radius: 2px; overflow:hidden; }
+  .lang-toggle button{ font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; padding: 7px 14px; background: transparent; color: var(--ink-soft); border: none; cursor:pointer; }
+  .lang-toggle button.active{ background: var(--gold); color: var(--parchment); }
+  .lang-toggle button:not(.active):hover{ background: rgba(147,112,31,0.12); }
+
+  .card{ background: var(--parchment-dark); border: 1px solid rgba(43,33,25,0.18); border-radius: 3px; box-shadow: var(--card-shadow); padding: 30px 26px; position: relative; }
+  .card::before{ content:""; position:absolute; inset: 6px; border: 1px solid rgba(43,33,25,0.14); pointer-events:none; }
+  .back-row{ margin-bottom: 14px; }
+  .back-row button{ background: transparent; border: 1px solid rgba(43,33,25,0.3); color: var(--ink-soft); font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 11px; border-radius: 2px; cursor: pointer; }
+  .viewing-date{ font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; }
+  .attribution{ font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); margin-bottom: 18px; }
+  .attribution .work{ font-style: italic; text-transform: none; opacity: 0.85; }
+  .sentence-block{ display:flex; align-items:flex-start; gap: 4px; margin-bottom: 8px; }
+  .drop-cap{ font-family: var(--display-font); font-weight: 700; font-size: 54px; line-height: 0.9; color: var(--rubric); border: 2px solid var(--gold); padding: 6px 12px 4px; background: rgba(184,145,47,0.08); box-shadow: inset 0 0 0 1px rgba(156,43,38,0.25); flex-shrink: 0; }
+  .latin-text{ font-family: var(--display-font); font-style: italic; font-weight: 600; font-size: 25px; line-height: 1.45; padding-top: 8px; color: var(--ink); }
+  .word-count{ font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.08em; margin: 4px 0 24px; opacity: 0.7; }
+  .section-label{ font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold); margin: 22px 0 10px; display:flex; align-items:center; gap:8px; }
+  .section-label::after{ content:""; flex:1; height:1px; background: repeating-linear-gradient(90deg, rgba(147,112,31,0.4) 0 4px, transparent 4px 8px); }
+  .focus-row{ display:flex; align-items:center; gap: 12px; margin-bottom: 10px; }
+  .focus-word{ font-family: var(--display-font); font-style: italic; font-weight: 600; font-size: 18px; min-width: 118px; color: var(--ink); }
+  .focus-input, textarea{ font-family: var(--body-font); font-size: 16px; background: #f3ead0; border: 1px solid rgba(43,33,25,0.3); border-radius: 2px; padding: 8px 10px; color: var(--ink); width: 100%; }
+  .focus-input:focus, textarea:focus{ outline: none; border-color: var(--rubric-soft); box-shadow: 0 0 0 2px rgba(156,43,38,0.12); }
+  textarea{ min-height: 84px; resize: vertical; line-height: 1.5; }
+  .submit-row{ margin-top: 24px; display:flex; gap: 12px; align-items:center; flex-wrap: wrap; }
+  button{ font-family: 'JetBrains Mono', monospace; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer; border-radius: 2px; border: 1px solid var(--ink); padding: 11px 20px; background: var(--ink); color: var(--parchment); transition: transform 0.08s ease, background 0.15s ease; }
+  button:hover{ background: var(--ink-soft); }
+  button:active{ transform: translateY(1px); }
+  button:disabled{ opacity:0.5; cursor: default; }
+  button.ghost{ background: transparent; color: var(--ink-soft); border-color: rgba(43,33,25,0.35); }
+  button.ghost:hover{ background: rgba(43,33,25,0.06); }
+  button.small{ padding: 7px 12px; font-size: 11px; }
+  .status-line{ font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-soft); }
+  .reveal-box{ margin-top: 26px; padding: 16px 18px; border-left: 3px solid var(--gold); background: rgba(184,145,47,0.08); }
+  .reveal-head{ font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gold); margin-bottom: 12px; }
+  .reveal-item{ margin-bottom: 18px; }
+  .reveal-item .w{ font-family: var(--display-font); font-style: italic; font-weight: 600; font-size: 18px; }
+  .reveal-item .parse-ref{ font-size: 14.5px; color: var(--ink-soft); margin: 3px 0 6px; }
+  .reveal-item .your-answer{ font-size: 13.5px; color: var(--ink-soft); font-family: 'JetBrains Mono', monospace; margin-bottom: 6px; }
+  .paradigm{ margin: 8px 0 10px; border: 1px solid rgba(43,33,25,0.2); background: rgba(243,234,208,0.6); overflow-x:auto; }
+  .paradigm-title{ font-family: 'JetBrains Mono', monospace; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gold); padding: 6px 10px; border-bottom: 1px dashed rgba(43,33,25,0.2); }
+  .paradigm table{ width: 100%; border-collapse: collapse; }
+  .paradigm td, .paradigm th{ padding: 4px 10px; font-size: 15px; text-align:left; }
+  .paradigm th{ font-family: 'JetBrains Mono', monospace; font-size: 10.5px; text-transform: uppercase; color: var(--gold); border-bottom: 1px dashed rgba(43,33,25,0.2); }
+  .paradigm td.lbl{ font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft); width: 26%; text-transform: lowercase; }
+  .paradigm td.frm{ font-style: italic; font-family: var(--display-font); }
+  .paradigm tr.hit td.frm, .paradigm td.frm.hit{ color: var(--rubric); font-weight: 600; }
+  .paradigm-note{ font-size: 12.5px; color: var(--ink-soft); padding: 5px 10px 7px; font-style: italic; border-top: 1px dashed rgba(43,33,25,0.15); }
+  .self-check{ display:flex; gap: 8px; }
+  .self-check button{ padding: 6px 12px; font-size: 11px; background: transparent; color: var(--ink-soft); border-color: rgba(43,33,25,0.3); }
+  .self-check button.chosen-good{ background: var(--sage); color: var(--parchment); border-color: var(--sage); }
+  .self-check button.chosen-bad{ background: var(--rubric); color: var(--parchment); border-color: var(--rubric); }
+  .translation-ref{ margin-top: 16px; padding-top: 14px; border-top: 1px dashed rgba(43,33,25,0.25); }
+  .translation-ref .ref-text{ font-style: italic; font-size: 16px; margin: 6px 0 10px; }
+  .translation-ref .your-answer{ font-size: 14px; color: var(--ink-soft); margin-bottom: 10px; }
+  .finish-row{ margin-top: 20px; }
+  .marginalia{ margin-top: 22px; padding: 16px 18px; border-left: 3px solid var(--sage); background: rgba(85,96,63,0.08); }
+  .marginalia.mixed{ border-left-color: var(--gold); background: rgba(184,145,47,0.08); }
+  .marginalia.rough{ border-left-color: var(--rubric); background: rgba(156,43,38,0.06); }
+  .marginalia-head{ font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sage); margin-bottom: 8px; }
+  .marginalia.mixed .marginalia-head{ color: var(--gold); }
+  .marginalia.rough .marginalia-head{ color: var(--rubric); }
+  .item-fb{ margin-bottom: 8px; font-size: 15px; line-height: 1.45; }
+  .reference-toggle{ margin-top: 16px; font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gold); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .reference-box{ margin-top: 10px; font-size: 15px; font-style: italic; color: var(--ink-soft); display:none; }
+  .reference-box.show{ display:block; }
+  .copy-row{ margin-top: 18px; display:flex; gap:10px; flex-wrap:wrap; }
+  .settings-strip{ margin-top: 18px; display:flex; gap:10px; align-items:center; flex-wrap: wrap; }
+  .footer-note{ text-align:center; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--ink-soft); opacity: 0.6; margin-top: 28px; letter-spacing: 0.05em; }
+  .toast{ position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--parchment); font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 10px 18px; border-radius: 2px; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; z-index: 10; max-width: 90vw; text-align:center; }
+  .toast.show{ opacity: 1; }
+
+  .overlay{ position: fixed; inset: 0; background: rgba(43,33,25,0.55); z-index: 20; display:none; align-items:flex-start; justify-content:center; padding: 8vh 16px; }
+  .overlay.show{ display:flex; }
+  .history-panel{ background: var(--parchment); border: 1px solid rgba(43,33,25,0.25); border-radius: 3px; max-width: 520px; width: 100%; max-height: 78vh; display:flex; flex-direction:column; box-shadow: var(--card-shadow); }
+  .history-head{ display:flex; align-items:center; justify-content:space-between; padding: 16px 18px; border-bottom: 1px solid rgba(43,33,25,0.2); }
+  .history-head h2{ font-family: 'Cormorant Garamond', serif; font-size: 19px; margin:0; font-weight:600; }
+  .history-list{ overflow-y:auto; padding: 6px 0; }
+  .history-row{ display:flex; align-items:center; gap: 10px; padding: 10px 18px; cursor:pointer; border-bottom: 1px solid rgba(43,33,25,0.08); }
+  .history-row:hover{ background: rgba(43,33,25,0.05); }
+  .history-dot{ width: 9px; height: 9px; border-radius: 50%; flex-shrink:0; background: rgba(43,33,25,0.25); }
+  .history-dot.good{ background: var(--sage); }
+  .history-dot.mixed{ background: var(--gold); }
+  .history-dot.rough{ background: var(--rubric); }
+  .history-dot.skipped{ background: rgba(43,33,25,0.3); }
+  .history-date{ font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: var(--ink-soft); width: 92px; flex-shrink:0; }
+  .history-author{ font-size: 14.5px; font-style: italic; flex: 1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .history-status{ font-family: 'JetBrains Mono', monospace; font-size: 10.5px; text-transform: uppercase; color: var(--ink-soft); opacity: 0.7; }
+
+  @media (max-width: 480px){
+    .drop-cap{ font-size: 40px; padding: 4px 8px 2px; }
+    .latin-text{ font-size: 20px; }
+    .focus-row{ flex-direction: column; align-items: flex-start; gap: 6px; }
+    .focus-word{ min-width: unset; }
+    .brand{ font-size: 12.5px; }
+    header.page-head{ flex-direction: column; align-items: stretch; }
+    .head-right{ justify-content: space-between; }
+  }
+  @media (prefers-reduced-motion: reduce){ *{ transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<svg class="grain" xmlns="http://www.w3.org/2000/svg">
+  <filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/></filter>
+  <rect width="100%" height="100%" filter="url(#noise)"/>
+</svg>
+
+<div class="wrap">
+  <header class="page-head">
+    <div class="brand">Lectio Quotidiana</div>
+    <div class="head-right">
+      <div class="lang-toggle" id="langToggle">
+        <button data-lang="latin" id="btnLatin">LAT</button>
+        <button data-lang="greek" id="btnGreek">GR</button>
+      </div>
+      <div class="streak-tally">
+        <span id="streakMarks" class="streak-marks"></span>
+        <span id="streakNum">0</span>
+      </div>
+      <button class="menu-btn" id="historyBtn">History</button>
+    </div>
+  </header>
+
+  <div class="card" id="card">
+    <div class="status-line">Loading today's lectio…</div>
+  </div>
+
+  <div class="settings-strip">
+    <button class="ghost small" id="reminderBtn">Enable daily reminder</button>
+  </div>
+
+  <div class="footer-note">a sentence a day, from the fathers and doctors of the church</div>
+</div>
+
+<div class="overlay" id="historyOverlay">
+  <div class="history-panel">
+    <div class="history-head">
+      <h2 id="historyTitle">Past days</h2>
+      <button class="ghost small" id="closeHistory">Close</button>
+    </div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const LANGS = {
+  latin: {
+    sentences: [{"id": 1, "author": "Augustine", "work": "Confessiones", "latin": "Fecisti nos ad te, et inquietum est cor nostrum donec requiescat in te.", "focus": [{"word": "Fecisti", "parse": "perfect active indicative, 2nd sg. — facio, facere (“you have made”)", "paradigm": "facio_perf", "hit": "2 sg"}, {"word": "requiescat", "parse": "present active subjunctive, 3rd sg. — requiesco, requiescere (“that it may rest”)", "paradigm": "requiesco_subj", "hit": "3 sg"}], "ref": "You made us for yourself, and our heart is restless until it rests in you."}, {"id": 2, "author": "Augustine", "work": "Confessiones", "latin": "Sero te amavi, pulchritudo tam antiqua et tam nova, sero te amavi.", "focus": [{"word": "amavi", "parse": "perfect active indicative, 1st sg. — amo, amare (“I have loved”)", "paradigm": "amo_perf", "hit": "1 sg"}, {"word": "pulchritudo", "parse": "vocative singular feminine — “beauty” (direct address)", "paradigm": "pulchritudo_decl", "hit": "voc sg"}], "ref": "Late have I loved you, beauty so ancient and so new, late have I loved you."}, {"id": 3, "author": "Jerome (Vulgate)", "work": "Evangelium secundum Ioannem 1:1", "latin": "In principio erat Verbum, et Verbum erat apud Deum, et Deus erat Verbum.", "focus": [{"word": "erat", "parse": "imperfect active indicative, 3rd sg. — sum, esse (“was”)", "paradigm": "sum_impf", "hit": "3 sg"}, {"word": "Verbum", "parse": "nominative singular neuter — “the Word” (subject / predicate nominative)", "paradigm": "verbum_decl", "hit": "nom sg"}], "ref": "In the beginning was the Word, and the Word was with God, and the Word was God."}, {"id": 4, "author": "Jerome (Vulgate)", "work": "Genesis 1:1", "latin": "In principio creavit Deus caelum et terram.", "focus": [{"word": "creavit", "parse": "perfect active indicative, 3rd sg. — creo, creare (“created”)", "paradigm": "creo_perf", "hit": "3 sg"}, {"word": "caelum", "parse": "accusative singular neuter — direct object, “heaven”", "paradigm": "caelum_decl", "hit": "acc sg"}], "ref": "In the beginning God created heaven and earth."}, {"id": 5, "author": "Thomas Aquinas", "work": "Summa Theologiae I, q.2, a.3", "latin": "Ergo necesse est devenire ad aliquod primum movens, quod a nullo movetur.", "focus": [{"word": "devenire", "parse": "present active infinitive — devenio, devenire (“to arrive at”)", "paradigm": "devenio_inf", "hit": null}, {"word": "movetur", "parse": "present passive indicative, 3rd sg. — moveo, movere (“is moved”)", "paradigm": "moveo_pass", "hit": "3 sg"}], "ref": "Therefore it is necessary to arrive at some first mover, which is moved by nothing."}, {"id": 6, "author": "Ambrose (attrib.)", "work": "Veni Redemptor Gentium", "latin": "Veni redemptor gentium, ostende partum virginis.", "focus": [{"word": "Veni", "parse": "present active imperative, 2nd sg. — venio, venire (“come!”)", "paradigm": "venio_impv", "hit": "2 sg"}, {"word": "ostende", "parse": "present active imperative, 2nd sg. — ostendo, ostendere (“show!”)", "paradigm": "ostendo_impv", "hit": "2 sg"}], "ref": "Come, redeemer of the nations, show forth the virgin's childbearing."}, {"id": 7, "author": "Gregory the Great", "work": "Homiliae in Evangelia", "latin": "Ipsa dilectio notitia est.", "focus": [{"word": "dilectio", "parse": "nominative singular feminine — subject, “love”", "paradigm": "dilectio_decl", "hit": "nom sg"}, {"word": "est", "parse": "present active indicative, 3rd sg. — sum, esse (“is”)", "paradigm": "sum_pres", "hit": "3 sg"}], "ref": "Love itself is a kind of knowledge."}, {"id": 8, "author": "Tertullian", "work": "Apologeticum", "latin": "Plures efficimur, quotiens metimur a vobis: semen est sanguis Christianorum.", "focus": [{"word": "efficimur", "parse": "present passive indicative, 1st pl. — efficio, efficere (“we are made/become”)", "paradigm": "efficio_pass", "hit": "1 pl"}, {"word": "metimur", "parse": "present indicative, 1st pl., deponent — metior, metiri (“we are mown down”)", "paradigm": "metior_dep", "hit": "1 pl"}], "ref": "The more we are mown down by you, the more we grow; the blood of Christians is seed."}, {"id": 9, "author": "Jerome (Vulgate)", "work": "Evangelium secundum Matthaeum 5:3", "latin": "Beati pauperes spiritu, quoniam ipsorum est regnum caelorum.", "focus": [{"word": "Beati", "parse": "nominative masculine plural — beatus, -a, -um, predicate adjective, “blessed”", "paradigm": "beatus_decl", "hit": "nom pl"}, {"word": "est", "parse": "present active indicative, 3rd sg. — sum, esse (“is”)", "paradigm": "sum_pres", "hit": "3 sg"}], "ref": "Blessed are the poor in spirit, for theirs is the kingdom of heaven."}, {"id": 10, "author": "Augustine", "work": "De Civitate Dei", "latin": "Duas civitates fecerunt amores duo.", "focus": [{"word": "fecerunt", "parse": "perfect active indicative, 3rd pl. — facio, facere (“made”)", "paradigm": "facio_perf", "hit": "3 pl"}, {"word": "amores", "parse": "nominative masculine plural — subject, “loves”", "paradigm": "amor_decl", "hit": "nom/acc pl"}], "ref": "Two loves made two cities."}, {"id": 11, "author": "Jerome", "work": "Commentarii in Isaiam, prol.", "latin": "Ignoratio enim Scripturarum ignoratio Christi est.", "focus": [{"word": "Ignoratio", "parse": "nominative singular feminine — subject, “ignorance”", "paradigm": "ignoratio_decl", "hit": "nom sg"}, {"word": "est", "parse": "present active indicative, 3rd sg. — sum, esse (“is”)", "paradigm": "sum_pres", "hit": "3 sg"}], "ref": "For ignorance of the Scriptures is ignorance of Christ."}, {"id": 12, "author": "Jerome (Vulgate)", "work": "Psalmus 22:1", "latin": "Dominus regit me, et nihil mihi deerit.", "focus": [{"word": "regit", "parse": "present active indicative, 3rd sg. — rego, regere (“rules, guides”)", "paradigm": "rego_pres", "hit": "3 sg"}, {"word": "deerit", "parse": "future active indicative, 3rd sg. — desum, deesse (“will be lacking”)", "paradigm": "desum_fut", "hit": "3 sg"}], "ref": "The Lord rules me, and I shall want nothing."}, {"id": 13, "author": "Thomas Aquinas", "work": "Summa Theologiae I, q.1, a.8 (traditional paraphrase)", "latin": "Gratia non tollit naturam, sed perficit.", "focus": [{"word": "tollit", "parse": "present active indicative, 3rd sg. — tollo, tollere (“takes away, destroys”)", "paradigm": "tollo_pres", "hit": "3 sg"}, {"word": "perficit", "parse": "present active indicative, 3rd sg. — perficio, perficere (“perfects, completes”)", "paradigm": "perficio_pres", "hit": "3 sg"}], "ref": "Grace does not destroy nature, but perfects it."}, {"id": 14, "author": "Ambrose", "work": "De Virginitate", "latin": "Omnia Christus est nobis.", "focus": [{"word": "est", "parse": "present active indicative, 3rd sg. — sum, esse (“is”)", "paradigm": "sum_pres", "hit": "3 sg"}, {"word": "Christus", "parse": "nominative singular masculine — subject, “Christ”", "paradigm": "christus_decl", "hit": "nom sg"}], "ref": "Christ is all things to us."}, {"id": 15, "author": "Augustine", "work": "Confessiones", "latin": "Magnus es, Domine, et laudabilis valde.", "focus": [{"word": "es", "parse": "present active indicative, 2nd sg. — sum, esse (“you are”)", "paradigm": "sum_pres", "hit": "2 sg"}, {"word": "laudabilis", "parse": "nominative singular masculine — predicate adjective, “praiseworthy”", "paradigm": "laudabilis_decl", "hit": "nom sg"}], "ref": "Great are you, Lord, and greatly to be praised."}, {"id": 16, "author": "Jerome (Vulgate)", "work": "Isaias 45:8", "latin": "Rorate caeli desuper, et nubes pluant iustum.", "focus": [{"word": "Rorate", "parse": "present active imperative, 2nd pl. — roro, rorare (“drop down dew!”)", "paradigm": "roro_impv", "hit": "2 pl"}, {"word": "pluant", "parse": "present active subjunctive, 3rd pl. (jussive) — pluo, pluere (“let them rain”)", "paradigm": "pluo_subj", "hit": "3 pl"}], "ref": "Drop down dew, you heavens, and let the clouds rain the just one."}, {"id": 17, "author": "Augustine", "work": "In Epistolam Ioannis ad Parthos, Tract. 7", "latin": "Dilige, et quod vis fac.", "focus": [{"word": "Dilige", "parse": "present active imperative, 2nd sg. — diligo, diligere (“love!”)", "paradigm": "diligo_impv", "hit": "2 sg"}, {"word": "fac", "parse": "present active imperative, 2nd sg. — facio, facere (“do!”)", "paradigm": "facio_impv", "hit": "2 sg"}], "ref": "Love, and do what you will."}, {"id": 18, "author": "Jerome (Vulgate)", "work": "I ad Corinthios 13:13", "latin": "Nunc autem manent fides, spes, caritas, tria haec: maior autem his est caritas.", "focus": [{"word": "manent", "parse": "present active indicative, 3rd pl. — maneo, manere (“remain, abide”)", "paradigm": "maneo_pres", "hit": "3 pl"}, {"word": "maior", "parse": "nominative singular feminine, comparative of magnus — predicate adjective, “greater”", "paradigm": "maior_decl", "hit": "nom sg"}], "ref": "And now abide faith, hope, charity, these three: but the greatest of these is charity."}, {"id": 19, "author": "Augustine", "work": "Confessiones", "latin": "Da mihi castitatem et continentiam, sed noli modo.", "focus": [{"word": "Da", "parse": "present active imperative, 2nd sg. — do, dare (“give!”)", "paradigm": "do_impv", "hit": "2 sg"}, {"word": "noli", "parse": "present active imperative, 2nd sg. — nolo, nolle (“do not!”)", "paradigm": "nolo_impv", "hit": "2 sg"}], "ref": "Give me chastity and continence, but not yet."}, {"id": 20, "author": "Jerome (Vulgate)", "work": "Exodus 3:14", "latin": "Ego sum qui sum.", "focus": [{"word": "sum", "parse": "present active indicative, 1st sg. — sum, esse (“I am”)", "paradigm": "sum_pres", "hit": "1 sg"}, {"word": "qui", "parse": "relative pronoun, nominative singular masculine — “who”", "paradigm": "qui_decl", "hit": "nom sg"}], "ref": "I am who I am."}, {"id": 21, "author": "Jerome (Vulgate)", "work": "Evangelium secundum Matthaeum 6:10", "latin": "Fiat voluntas tua, sicut in caelo et in terra.", "focus": [{"word": "Fiat", "parse": "present active subjunctive, 3rd sg. (jussive) — fio, fieri (“let it be done”)", "paradigm": "fio_subj", "hit": "3 sg"}, {"word": "voluntas", "parse": "nominative singular feminine — subject, “will”", "paradigm": "voluntas_decl", "hit": "nom sg"}], "ref": "Thy will be done, as in heaven so on earth."}, {"id": 22, "author": "Augustine", "work": "Enchiridion", "latin": "Spes sine caritate nulla est.", "focus": [{"word": "Spes", "parse": "nominative singular feminine — subject, “hope”", "paradigm": "spes_decl", "hit": "nom sg"}, {"word": "nulla", "parse": "nominative singular feminine — predicate adjective, “none, nothing”", "paradigm": "nullus_decl", "hit": "nom sg"}], "ref": "Hope without charity is nothing."}, {"id": 23, "author": "Jerome (Vulgate)", "work": "Iob 19:25", "latin": "Scio enim quod redemptor meus vivit.", "focus": [{"word": "Scio", "parse": "present active indicative, 1st sg. — scio, scire (“I know”)", "paradigm": "scio_pres", "hit": "1 sg"}, {"word": "vivit", "parse": "present active indicative, 3rd sg. — vivo, vivere (“lives”)", "paradigm": "vivo_pres", "hit": "3 sg"}], "ref": "For I know that my Redeemer lives."}, {"id": 24, "author": "Ambrose", "work": "De Officiis", "latin": "Nemo alteri quod sibi nolit, faciat.", "focus": [{"word": "nolit", "parse": "present active subjunctive, 3rd sg. (jussive) — nolo, nolle (“let him not wish”)", "paradigm": "nolo_subj", "hit": "3 sg"}, {"word": "faciat", "parse": "present active subjunctive, 3rd sg. (jussive) — facio, facere (“let him do”)", "paradigm": "facio_subj", "hit": "3 sg"}], "ref": "Let no one do to another what he would not wish for himself."}, {"id": 25, "author": "Jerome (Vulgate)", "work": "Proverbia 1:7", "latin": "Timor Domini principium sapientiae.", "focus": [{"word": "Timor", "parse": "nominative singular masculine — subject, “fear”", "paradigm": "timor_decl", "hit": "nom sg"}, {"word": "sapientiae", "parse": "genitive singular feminine — “of wisdom”", "paradigm": "sapientia_decl", "hit": "gen sg"}], "ref": "The fear of the Lord is the beginning of wisdom."}, {"id": 26, "author": "Jerome (Vulgate)", "work": "Evangelium secundum Matthaeum 17:4", "latin": "Bonum est nobis hic esse.", "focus": [{"word": "Bonum", "parse": "nominative singular neuter — predicate adjective, “a good thing”", "paradigm": "bonus_decl", "hit": null}, {"word": "esse", "parse": "present active infinitive — sum, esse (“to be”)", "paradigm": "sum_pres", "hit": null}], "ref": "It is good for us to be here."}, {"id": 27, "author": "Gregory the Great", "work": "Homiliae in Evangelia", "latin": "Probatio dilectionis exhibitio est operis.", "focus": [{"word": "exhibitio", "parse": "nominative singular feminine — predicate, “the showing forth”", "paradigm": "exhibitio_decl", "hit": "nom sg"}, {"word": "est", "parse": "present active indicative, 3rd sg. — sum, esse (“is”)", "paradigm": "sum_pres", "hit": "3 sg"}], "ref": "The proof of love is in the doing of deeds."}, {"id": 28, "author": "Tertullian", "work": "De Testimonio Animae", "latin": "Anima naturaliter Christiana est.", "focus": [{"word": "Anima", "parse": "nominative singular feminine — subject, “the soul”", "paradigm": "anima_decl", "hit": "nom sg"}, {"word": "est", "parse": "present active indicative, 3rd sg. — sum, esse (“is”)", "paradigm": "sum_pres", "hit": "3 sg"}], "ref": "The soul is naturally Christian."}, {"id": 29, "author": "Thomas Aquinas", "work": "Summa Theologiae I, q.1, a.2 (traditional paraphrase)", "latin": "Sacra doctrina est scientia.", "focus": [{"word": "doctrina", "parse": "nominative singular feminine — subject, “teaching, doctrine”", "paradigm": "doctrina_decl", "hit": "nom sg"}, {"word": "scientia", "parse": "nominative singular feminine — predicate, “a science, a knowledge”", "paradigm": "scientia_decl", "hit": "nom sg"}], "ref": "Sacred doctrine is a science."}, {"id": 30, "author": "Jerome (Vulgate)", "work": "Ad Philippenses 4:13", "latin": "Omnia possum in eo qui me confortat.", "focus": [{"word": "possum", "parse": "present active indicative, 1st sg. — possum, posse (“I am able”)", "paradigm": "possum_pres", "hit": "1 sg"}, {"word": "confortat", "parse": "present active indicative, 3rd sg. — conforto, confortare (“strengthens”)", "paradigm": "conforto_pres", "hit": "3 sg"}], "ref": "I can do all things in him who strengthens me."}, {"id": 31, "author": "Jerome (Vulgate)", "work": "Genesis 3:19", "latin": "Pulvis es, et in pulverem reverteris.", "focus": [{"word": "es", "parse": "present active indicative, 2nd sg. — sum, esse (“you are”)", "paradigm": "sum_pres", "hit": "2 sg"}, {"word": "reverteris", "parse": "future indicative, 2nd sg., deponent — revertor, reverti (“you will return”)", "paradigm": "revertor_dep", "hit": "2 sg"}], "ref": "Dust you are, and unto dust you shall return."}, {"id": 32, "author": "Jerome (Vulgate)", "work": "Iob 14:2", "latin": "Quasi flos egreditur et conteritur, et fugit velut umbra.", "focus": [{"word": "egreditur", "parse": "present indicative, 3rd sg., deponent — egredior, egredi (“comes forth”)", "paradigm": "egredior_dep", "hit": "3 sg"}, {"word": "fugit", "parse": "present active indicative, 3rd sg. — fugio, fugere (“flees”)", "paradigm": "fugio_pres", "hit": "3 sg"}], "ref": "He comes forth like a flower, and is cut down; he flees like a shadow."}, {"id": 33, "author": "Augustine", "work": "Sermo 172 (traditional citation)", "latin": "Non amittuntur, sed praemittuntur.", "focus": [{"word": "amittuntur", "parse": "present passive indicative, 3rd pl. — amitto, amittere (“they are lost”)", "paradigm": "amitto_pass", "hit": "3 pl"}, {"word": "praemittuntur", "parse": "present passive indicative, 3rd pl. — praemitto, praemittere (“they are sent ahead”)", "paradigm": "praemitto_pass", "hit": "3 pl"}], "ref": "They are not lost, but sent on ahead."}, {"id": 34, "author": "Paul (Vulgate)", "work": "I ad Corinthios 15:55", "latin": "Ubi est, mors, victoria tua? Ubi est, mors, stimulus tuus?", "focus": [{"word": "mors", "parse": "vocative singular feminine — direct address, “O death”", "paradigm": "mors_decl", "hit": "nom sg"}, {"word": "est", "parse": "present active indicative, 3rd sg. — sum, esse (“is”)", "paradigm": "sum_pres", "hit": "3 sg"}], "ref": "O death, where is your victory? O death, where is your sting?"}, {"id": 35, "author": "Jerome (Vulgate)", "work": "Psalmus 22:4", "latin": "Nam et si ambulavero in medio umbrae mortis, non timebo mala.", "focus": [{"word": "ambulavero", "parse": "future perfect active indicative, 1st sg. — ambulo, ambulare (“I shall have walked”)", "paradigm": "ambulo_futperf", "hit": "1 sg"}, {"word": "timebo", "parse": "future active indicative, 1st sg. — timeo, timere (“I will fear”)", "paradigm": "timeo_fut", "hit": "1 sg"}], "ref": "Even though I walk in the midst of the shadow of death, I will fear no evils."}, {"id": 36, "author": "Jerome (Vulgate)", "work": "Ad Hebraeos 9:27", "latin": "Statutum est hominibus semel mori, post hoc autem iudicium.", "focus": [{"word": "Statutum est", "parse": "perfect passive indicative, 3rd sg. (impersonal) — statuo, statuere (“it is appointed”)", "paradigm": "statuo_perf_pass", "hit": null}, {"word": "mori", "parse": "present deponent infinitive — morior, mori (“to die”)", "paradigm": "morior_dep", "hit": null}], "ref": "It is appointed for men to die once, and after this the judgment."}, {"id": 37, "author": "Jerome", "work": "Epistulae (traditional citation)", "latin": "Quotidie morimur, quotidie commutamur.", "focus": [{"word": "morimur", "parse": "present indicative, 1st pl., deponent — morior, mori (“we die”)", "paradigm": "morior_dep", "hit": "1 pl"}, {"word": "commutamur", "parse": "present passive indicative, 1st pl. — commuto, commutare (“we are changed”)", "paradigm": "commuto_pass", "hit": "1 pl"}], "ref": "Daily we die, daily we are changed."}, {"id": 38, "author": "Jerome (Vulgate)", "work": "Sapientia 1:13", "latin": "Deus mortem non fecit, nec laetatur in perditione vivorum.", "focus": [{"word": "fecit", "parse": "perfect active indicative, 3rd sg. — facio, facere (“made”)", "paradigm": "facio_perf", "hit": "3 sg"}, {"word": "laetatur", "parse": "present indicative, 3rd sg., deponent — laetor, laetari (“rejoices”)", "paradigm": "laetor_dep", "hit": "3 sg"}], "ref": "God did not make death, nor does he rejoice in the destruction of the living."}, {"id": 39, "author": "Tertullian", "work": "De Resurrectione Carnis", "latin": "Caro salutis est cardo.", "focus": [{"word": "est", "parse": "present active indicative, 3rd sg. — sum, esse (“is”)", "paradigm": "sum_pres", "hit": "3 sg"}, {"word": "cardo", "parse": "nominative singular masculine — predicate, “hinge”", "paradigm": "cardo_decl", "hit": "nom sg"}], "ref": "The flesh is the hinge of salvation."}, {"id": 40, "author": "Jerome (Vulgate)", "work": "Apocalypsis 21:4", "latin": "Et mors ultra non erit, neque luctus, neque clamor, neque dolor erit ultra.", "focus": [{"word": "erit", "parse": "future active indicative, 3rd sg. — sum, esse (“will be”)", "paradigm": "sum_fut", "hit": "3 sg"}, {"word": "mors", "parse": "nominative singular feminine — subject, “death”", "paradigm": "mors_decl", "hit": "nom sg"}], "ref": "And death shall be no more, neither shall there be mourning, nor crying, nor pain any more."}],
+    paradigms: {"sum_pres": {"title": "sum, esse — present active indicative", "rows": [["1 sg", "sum"], ["2 sg", "es"], ["3 sg", "est"], ["1 pl", "sumus"], ["2 pl", "estis"], ["3 pl", "sunt"]]}, "sum_impf": {"title": "sum, esse — imperfect active indicative", "rows": [["1 sg", "eram"], ["2 sg", "erās"], ["3 sg", "erat"], ["1 pl", "erāmus"], ["2 pl", "erātis"], ["3 pl", "erant"]]}, "facio_perf": {"title": "faciō, facere — perfect active indicative", "rows": [["1 sg", "fēcī"], ["2 sg", "fēcistī"], ["3 sg", "fēcit"], ["1 pl", "fēcimus"], ["2 pl", "fēcistis"], ["3 pl", "fēcērunt"]]}, "facio_impv": {"title": "faciō, facere — present active imperative", "rows": [["2 sg", "fac"], ["2 pl", "facite"]], "note": "fac is one of four irregular short imperatives: dīc, dūc, fac, fer."}, "facio_subj": {"title": "faciō, facere — present active subjunctive", "rows": [["1 sg", "faciam"], ["2 sg", "faciās"], ["3 sg", "faciat"], ["1 pl", "faciāmus"], ["2 pl", "faciātis"], ["3 pl", "faciant"]], "note": "Jussive subjunctive: “let him do.”"}, "requiesco_subj": {"title": "requiēscō, requiēscere — present active subjunctive", "rows": [["1 sg", "requiēscam"], ["2 sg", "requiēscās"], ["3 sg", "requiēscat"], ["1 pl", "requiēscāmus"], ["2 pl", "requiēscātis"], ["3 pl", "requiēscant"]]}, "amo_perf": {"title": "amō, amāre — perfect active indicative", "rows": [["1 sg", "amāvī"], ["2 sg", "amāvistī"], ["3 sg", "amāvit"], ["1 pl", "amāvimus"], ["2 pl", "amāvistis"], ["3 pl", "amāvērunt"]]}, "pulchritudo_decl": {"title": "pulchritūdō, -inis f. — 3rd declension", "rows": [["nom sg", "pulchritūdō"], ["gen sg", "pulchritūdinis"], ["dat sg", "pulchritūdinī"], ["acc sg", "pulchritūdinem"], ["abl sg", "pulchritūdine"], ["voc sg", "pulchritūdō"]], "note": "Here vocative — Augustine addresses Beauty directly."}, "verbum_decl": {"title": "verbum, -ī n. — 2nd declension neuter", "rows": [["nom sg", "verbum"], ["gen sg", "verbī"], ["dat sg", "verbō"], ["acc sg", "verbum"], ["abl sg", "verbō"], ["nom/acc pl", "verba"], ["gen pl", "verbōrum"], ["dat/abl pl", "verbīs"]]}, "creo_perf": {"title": "creō, creāre — perfect active indicative", "rows": [["1 sg", "creāvī"], ["2 sg", "creāvistī"], ["3 sg", "creāvit"], ["1 pl", "creāvimus"], ["2 pl", "creāvistis"], ["3 pl", "creāvērunt"]]}, "caelum_decl": {"title": "caelum, -ī n. — 2nd declension neuter", "rows": [["nom sg", "caelum"], ["gen sg", "caelī"], ["dat sg", "caelō"], ["acc sg", "caelum"], ["abl sg", "caelō"]], "note": "Heteroclite: the plural is masculine — caelī, caelōrum, caelīs, caelōs, caelīs."}, "devenio_inf": {"title": "dēveniō, dēvenīre — present active indicative", "rows": [["1 sg", "dēveniō"], ["2 sg", "dēvenīs"], ["3 sg", "dēvenit"], ["1 pl", "dēvenīmus"], ["2 pl", "dēvenītis"], ["3 pl", "dēveniunt"]], "note": "In the sentence: dēvenīre, the present active infinitive."}, "moveo_pass": {"title": "moveō, movēre — present passive indicative", "rows": [["1 sg", "moveor"], ["2 sg", "movēris"], ["3 sg", "movētur"], ["1 pl", "movēmur"], ["2 pl", "movēminī"], ["3 pl", "moventur"]]}, "venio_impv": {"title": "veniō, venīre — present active imperative", "rows": [["2 sg", "venī"], ["2 pl", "venīte"]]}, "ostendo_impv": {"title": "ostendō, ostendere — present active imperative", "rows": [["2 sg", "ostende"], ["2 pl", "ostendite"]]}, "dilectio_decl": {"title": "dīlēctiō, -ōnis f. — 3rd declension", "rows": [["nom sg", "dīlēctiō"], ["gen sg", "dīlēctiōnis"], ["dat sg", "dīlēctiōnī"], ["acc sg", "dīlēctiōnem"], ["abl sg", "dīlēctiōne"], ["nom/acc pl", "dīlēctiōnēs"], ["gen pl", "dīlēctiōnum"], ["dat/abl pl", "dīlēctiōnibus"]]}, "efficio_pass": {"title": "efficiō, efficere — present passive indicative", "rows": [["1 sg", "efficior"], ["2 sg", "efficeris"], ["3 sg", "efficitur"], ["1 pl", "efficimur"], ["2 pl", "efficiminī"], ["3 pl", "efficiuntur"]]}, "metior_dep": {"title": "metior, metīrī — present indicative (deponent)", "rows": [["1 sg", "metior"], ["2 sg", "metīris"], ["3 sg", "metītur"], ["1 pl", "metīmur"], ["2 pl", "metīminī"], ["3 pl", "metiuntur"]], "note": "Deponent: passive in form; Tertullian uses it here with true passive sense (“we are mown down”)."}, "beatus_decl": {"title": "beātus, -a, -um — masculine declension", "rows": [["nom sg", "beātus"], ["gen sg", "beātī"], ["dat sg", "beātō"], ["acc sg", "beātum"], ["abl sg", "beātō"], ["nom pl", "beātī"], ["gen pl", "beātōrum"], ["dat/abl pl", "beātīs"], ["acc pl", "beātōs"]]}, "amor_decl": {"title": "amor, amōris m. — 3rd declension", "rows": [["nom sg", "amor"], ["gen sg", "amōris"], ["dat sg", "amōrī"], ["acc sg", "amōrem"], ["abl sg", "amōre"], ["nom/acc pl", "amōrēs"], ["gen pl", "amōrum"], ["dat/abl pl", "amōribus"]]}, "ignoratio_decl": {"title": "ignōrātiō, -ōnis f. — 3rd declension", "rows": [["nom sg", "ignōrātiō"], ["gen sg", "ignōrātiōnis"], ["dat sg", "ignōrātiōnī"], ["acc sg", "ignōrātiōnem"], ["abl sg", "ignōrātiōne"]]}, "rego_pres": {"title": "regō, regere — present active indicative", "rows": [["1 sg", "regō"], ["2 sg", "regis"], ["3 sg", "regit"], ["1 pl", "regimus"], ["2 pl", "regitis"], ["3 pl", "regunt"]]}, "desum_fut": {"title": "dēsum, dēesse — future active indicative", "rows": [["1 sg", "dēerō"], ["2 sg", "dēeris"], ["3 sg", "dēerit"], ["1 pl", "dēerimus"], ["2 pl", "dēeritis"], ["3 pl", "dēerunt"]]}, "tollo_pres": {"title": "tollō, tollere — present active indicative", "rows": [["1 sg", "tollō"], ["2 sg", "tollis"], ["3 sg", "tollit"], ["1 pl", "tollimus"], ["2 pl", "tollitis"], ["3 pl", "tollunt"]]}, "perficio_pres": {"title": "perficiō, perficere — present active indicative", "rows": [["1 sg", "perficiō"], ["2 sg", "perficis"], ["3 sg", "perficit"], ["1 pl", "perficimus"], ["2 pl", "perficitis"], ["3 pl", "perficiunt"]]}, "christus_decl": {"title": "Chrīstus, -ī m. — 2nd declension", "rows": [["nom sg", "Chrīstus"], ["gen sg", "Chrīstī"], ["dat sg", "Chrīstō"], ["acc sg", "Chrīstum"], ["abl sg", "Chrīstō"], ["voc sg", "Chrīste"]]}, "laudabilis_decl": {"title": "laudābilis, -e — 3rd declension adjective (m/f)", "rows": [["nom sg", "laudābilis"], ["gen sg", "laudābilis"], ["dat sg", "laudābilī"], ["acc sg", "laudābilem"], ["abl sg", "laudābilī"], ["nom/acc pl", "laudābilēs"], ["gen pl", "laudābilium"], ["dat/abl pl", "laudābilibus"]], "note": "Neuter sg: laudābile; neuter pl: laudābilia."}, "roro_impv": {"title": "rōrō, rōrāre — present active imperative", "rows": [["2 sg", "rōrā"], ["2 pl", "rōrāte"]]}, "pluo_subj": {"title": "pluō, pluere — present active subjunctive", "rows": [["1 sg", "pluam"], ["2 sg", "pluās"], ["3 sg", "pluat"], ["1 pl", "pluāmus"], ["2 pl", "pluātis"], ["3 pl", "pluant"]], "note": "Jussive subjunctive: “let the clouds rain.”"}, "diligo_impv": {"title": "dīligō, dīligere — present active imperative", "rows": [["2 sg", "dīlige"], ["2 pl", "dīligite"]]}, "maneo_pres": {"title": "maneō, manēre — present active indicative", "rows": [["1 sg", "maneō"], ["2 sg", "manēs"], ["3 sg", "manet"], ["1 pl", "manēmus"], ["2 pl", "manētis"], ["3 pl", "manent"]]}, "maior_decl": {"title": "maior, maius — comparative declension (m/f)", "rows": [["nom sg", "maior"], ["gen sg", "maiōris"], ["dat sg", "maiōrī"], ["acc sg", "maiōrem"], ["abl sg", "maiōre"], ["nom/acc pl", "maiōrēs"], ["gen pl", "maiōrum"], ["dat/abl pl", "maiōribus"]], "note": "Neuter sg nom/acc: maius; neuter pl: maiōra."}, "do_impv": {"title": "dō, dare — present active imperative", "rows": [["2 sg", "dā"], ["2 pl", "date"]], "note": "1st conjugation, but note the short vowel in dare's stem (dăre, not dāre)."}, "nolo_impv": {"title": "nōlō, nōlle — present active imperative", "rows": [["2 sg", "nōlī"], ["2 pl", "nōlīte"]], "note": "The standard way to say “don't” — nōlī + infinitive."}, "nolo_subj": {"title": "nōlō, nōlle — present active subjunctive", "rows": [["1 sg", "nōlim"], ["2 sg", "nōlīs"], ["3 sg", "nōlit"], ["1 pl", "nōlīmus"], ["2 pl", "nōlītis"], ["3 pl", "nōlint"]], "note": "Irregular, parallel to sim/velim; jussive here: “let him not wish.”"}, "fio_subj": {"title": "fīō, fierī — present active subjunctive", "rows": [["1 sg", "fīam"], ["2 sg", "fīās"], ["3 sg", "fīat"], ["1 pl", "fīāmus"], ["2 pl", "fīātis"], ["3 pl", "fīant"]], "note": "fīō serves as the irregular passive of faciō. Jussive: “let it be done” (cf. fiat lux)."}, "voluntas_decl": {"title": "voluntās, -ātis f. — 3rd declension", "rows": [["nom sg", "voluntās"], ["gen sg", "voluntātis"], ["dat sg", "voluntātī"], ["acc sg", "voluntātem"], ["abl sg", "voluntāte"]]}, "spes_decl": {"title": "spēs, speī f. — 5th declension", "rows": [["nom sg", "spēs"], ["gen sg", "speī"], ["dat sg", "speī"], ["acc sg", "spem"], ["abl sg", "spē"]], "note": "5th declension nouns (like diēs, rēs) are mostly feminine and rarely used in the plural."}, "nullus_decl": {"title": "nūllus, -a, -um — pronominal declension", "cols": ["masc", "fem", "neut"], "rows": [["nom sg", "nūllus", "nūlla", "nūllum"], ["gen sg", "nūllīus", "nūllīus", "nūllīus"], ["dat sg", "nūllī", "nūllī", "nūllī"], ["acc sg", "nūllum", "nūllam", "nūllum"], ["abl sg", "nūllō", "nūllā", "nūllō"]], "note": "One of nine irregular adjectives (with ūnus, sōlus, tōtus, ūllus, alter, uter, neuter, alius) that take -īus in the genitive and -ī in the dative singular, across all genders. Plural is regular 1st/2nd declension."}, "scio_pres": {"title": "sciō, scīre — present active indicative", "rows": [["1 sg", "sciō"], ["2 sg", "scīs"], ["3 sg", "scit"], ["1 pl", "scīmus"], ["2 pl", "scītis"], ["3 pl", "sciunt"]]}, "vivo_pres": {"title": "vīvō, vīvere — present active indicative", "rows": [["1 sg", "vīvō"], ["2 sg", "vīvis"], ["3 sg", "vīvit"], ["1 pl", "vīvimus"], ["2 pl", "vīvitis"], ["3 pl", "vīvunt"]]}, "timor_decl": {"title": "timor, timōris m. — 3rd declension", "rows": [["nom sg", "timor"], ["gen sg", "timōris"], ["dat sg", "timōrī"], ["acc sg", "timōrem"], ["abl sg", "timōre"]]}, "sapientia_decl": {"title": "sapientia, -ae f. — 1st declension", "rows": [["nom sg", "sapientia"], ["gen sg", "sapientiae"], ["dat sg", "sapientiae"], ["acc sg", "sapientiam"], ["abl sg", "sapientiā"]]}, "bonus_decl": {"title": "bonus, -a, -um — masculine declension", "rows": [["nom sg", "bonus"], ["gen sg", "bonī"], ["dat sg", "bonō"], ["acc sg", "bonum"], ["abl sg", "bonō"], ["nom pl", "bonī"], ["gen pl", "bonōrum"], ["dat/abl pl", "bonīs"]], "note": "Here used as a neuter predicate: Bonum (nom/acc sg neut), “it is a good thing.”"}, "qui_decl": {"title": "quī, quae, quod — relative pronoun", "cols": ["masc", "fem", "neut"], "rows": [["nom sg", "quī", "quae", "quod"], ["gen sg", "cuius", "cuius", "cuius"], ["dat sg", "cui", "cui", "cui"], ["acc sg", "quem", "quam", "quod"], ["abl sg", "quō", "quā", "quō"], ["nom pl", "quī", "quae", "quae"], ["gen pl", "quōrum", "quārum", "quōrum"], ["dat/abl pl", "quibus", "quibus", "quibus"]]}, "exhibitio_decl": {"title": "exhibitiō, -ōnis f. — 3rd declension", "rows": [["nom sg", "exhibitiō"], ["gen sg", "exhibitiōnis"], ["dat sg", "exhibitiōnī"], ["acc sg", "exhibitiōnem"], ["abl sg", "exhibitiōne"]]}, "anima_decl": {"title": "anima, -ae f. — 1st declension", "rows": [["nom sg", "anima"], ["gen sg", "animae"], ["dat sg", "animae"], ["acc sg", "animam"], ["abl sg", "animā"]]}, "doctrina_decl": {"title": "doctrīna, -ae f. — 1st declension", "rows": [["nom sg", "doctrīna"], ["gen sg", "doctrīnae"], ["dat sg", "doctrīnae"], ["acc sg", "doctrīnam"], ["abl sg", "doctrīnā"]]}, "scientia_decl": {"title": "scientia, -ae f. — 1st declension", "rows": [["nom sg", "scientia"], ["gen sg", "scientiae"], ["dat sg", "scientiae"], ["acc sg", "scientiam"], ["abl sg", "scientiā"]]}, "possum_pres": {"title": "possum, posse — present active indicative", "rows": [["1 sg", "possum"], ["2 sg", "potes"], ["3 sg", "potest"], ["1 pl", "possumus"], ["2 pl", "potestis"], ["3 pl", "possunt"]], "note": "Compound of potis + sum."}, "conforto_pres": {"title": "cōnfortō, cōnfortāre — present active indicative", "rows": [["1 sg", "cōnfortō"], ["2 sg", "cōnfortās"], ["3 sg", "cōnfortat"], ["1 pl", "cōnfortāmus"], ["2 pl", "cōnfortātis"], ["3 pl", "cōnfortant"]]}, "revertor_dep": {"title": "revertor, revertī — present indicative (deponent)", "rows": [["1 sg", "revertor"], ["2 sg", "reverteris"], ["3 sg", "revertitur"], ["1 pl", "revertimur"], ["2 pl", "revertiminī"], ["3 pl", "revertuntur"]], "note": "Here future: reverteris (“you will return”)."}, "egredior_dep": {"title": "ēgredior, ēgredī — present indicative (deponent)", "rows": [["1 sg", "ēgredior"], ["2 sg", "ēgrederis"], ["3 sg", "ēgreditur"], ["1 pl", "ēgredimur"], ["2 pl", "ēgrediminī"], ["3 pl", "ēgrediuntur"]]}, "fugio_pres": {"title": "fugiō, fugere — present active indicative", "rows": [["1 sg", "fugiō"], ["2 sg", "fugis"], ["3 sg", "fugit"], ["1 pl", "fugimus"], ["2 pl", "fugitis"], ["3 pl", "fugiunt"]]}, "amitto_pass": {"title": "āmittō, āmittere — present passive indicative", "rows": [["1 sg", "āmittor"], ["2 sg", "āmitteris"], ["3 sg", "āmittitur"], ["1 pl", "āmittimur"], ["2 pl", "āmittiminī"], ["3 pl", "āmittuntur"]]}, "praemitto_pass": {"title": "praemittō, praemittere — present passive indicative", "rows": [["1 sg", "praemittor"], ["2 sg", "praemitteris"], ["3 sg", "praemittitur"], ["1 pl", "praemittimur"], ["2 pl", "praemittiminī"], ["3 pl", "praemittuntur"]]}, "mors_decl": {"title": "mors, mortis f. — 3rd declension (i-stem)", "rows": [["nom sg", "mors"], ["gen sg", "mortis"], ["dat sg", "mortī"], ["acc sg", "mortem"], ["abl sg", "morte"], ["nom/acc pl", "mortēs"], ["gen pl", "mortium"], ["dat/abl pl", "mortibus"]]}, "ambulo_futperf": {"title": "ambulō, ambulāre — future perfect active indicative", "rows": [["1 sg", "ambulāverō"], ["2 sg", "ambulāveris"], ["3 sg", "ambulāverit"], ["1 pl", "ambulāverimus"], ["2 pl", "ambulāveritis"], ["3 pl", "ambulāverint"]]}, "timeo_fut": {"title": "timeō, timēre — future active indicative", "rows": [["1 sg", "timēbō"], ["2 sg", "timēbis"], ["3 sg", "timēbit"], ["1 pl", "timēbimus"], ["2 pl", "timēbitis"], ["3 pl", "timēbunt"]]}, "statuo_perf_pass": {"title": "statuō, statuere — perfect passive indicative (periphrastic)", "rows": [["1 sg", "statūtus sum"], ["2 sg", "statūtus es"], ["3 sg", "statūtus est"], ["1 pl", "statūtī sumus"], ["2 pl", "statūtī estis"], ["3 pl", "statūtī sunt"]], "note": "Latin's perfect passive is periphrastic: perfect passive participle + present of sum. “Statutum est” (neuter, impersonal) — “it has been appointed.”"}, "morior_dep": {"title": "morior, morī — present indicative (deponent)", "rows": [["1 sg", "morior"], ["2 sg", "moreris"], ["3 sg", "moritur"], ["1 pl", "morimur"], ["2 pl", "moriminī"], ["3 pl", "moriuntur"]], "note": "morī is the present active infinitive form (deponent, so passive in shape, active in sense): “to die.”"}, "commuto_pass": {"title": "commūtō, commūtāre — present passive indicative", "rows": [["1 sg", "commūtor"], ["2 sg", "commūtāris"], ["3 sg", "commūtātur"], ["1 pl", "commūtāmur"], ["2 pl", "commūtāminī"], ["3 pl", "commūtantur"]]}, "laetor_dep": {"title": "laetor, laetārī — present indicative (deponent)", "rows": [["1 sg", "laetor"], ["2 sg", "laetāris"], ["3 sg", "laetātur"], ["1 pl", "laetāmur"], ["2 pl", "laetāminī"], ["3 pl", "laetantur"]]}, "cardo_decl": {"title": "cardō, cardinis m. — 3rd declension", "rows": [["nom sg", "cardō"], ["gen sg", "cardinis"], ["dat sg", "cardinī"], ["acc sg", "cardinem"], ["abl sg", "cardine"]], "note": "Literally “hinge” — the pivot-point on which something turns."}, "sum_fut": {"title": "sum, esse — future active indicative", "rows": [["1 sg", "erō"], ["2 sg", "eris"], ["3 sg", "erit"], ["1 pl", "erimus"], ["2 pl", "eritis"], ["3 pl", "erunt"]]}},
+    storageKey: "lectio_latin_history",
+    firstUseKey: "lectio_latin_first_use",
+    idbKey: "lastCompleted_latin",
+    displayFont: "'Cormorant Garamond', serif",
+    label: "Latin"
+  },
+  greek: {
+    sentences: [{"id": 1, "author": "John (Vulgate parallel: Gospel)", "work": "Gospel of John 1:1", "latin": "Ἐν ἀρχῇ ἦν ὁ λόγος, καὶ ὁ λόγος ἦν πρὸς τὸν θεόν, καὶ θεὸς ἦν ὁ λόγος.", "focus": [{"word": "ἦν", "parse": "imperfect indicative, 3rd sg. — εἰμί (“was”)", "paradigm": "eimi_impf", "hit": "3 sg"}, {"word": "λόγος", "parse": "nominative singular masculine — subject, “the Word”", "paradigm": "logos_decl", "hit": "nom sg"}], "ref": "In the beginning was the Word, and the Word was with God, and the Word was God."}, {"id": 2, "author": "John Chrysostom", "work": "Homiliae in Ioannem (traditional citation)", "latin": "Ὁ θεὸς ἠγάπησεν ἡμᾶς.", "focus": [{"word": "ἠγάπησεν", "parse": "aorist active indicative, 3rd sg. — ἀγαπάω (“loved”)", "paradigm": "agapao_aor_act", "hit": "3 sg"}, {"word": "θεὸς", "parse": "nominative singular masculine — subject, “God”", "paradigm": "theos_decl", "hit": "nom sg"}], "ref": "God loved us."}, {"id": 3, "author": "Septuagint/Vulgate parallel", "work": "Genesis 1:1 (LXX)", "latin": "Ἐν ἀρχῇ ἐποίησεν ὁ θεὸς τὸν οὐρανὸν καὶ τὴν γῆν.", "focus": [{"word": "ἐποίησεν", "parse": "aorist active indicative, 3rd sg. — ποιέω (“made”)", "paradigm": "poieo_aor_act", "hit": "3 sg"}, {"word": "οὐρανὸν", "parse": "accusative singular masculine — direct object, “heaven”", "paradigm": "ouranos_decl", "hit": "acc sg"}], "ref": "In the beginning God made the heaven and the earth."}, {"id": 4, "author": "Basil the Great", "work": "De Spiritu Sancto (traditional citation)", "latin": "Πάντα δι᾽ αὐτοῦ ἐγένετο.", "focus": [{"word": "ἐγένετο", "parse": "aorist indicative, 3rd sg., deponent — γίνομαι (“came to be”)", "paradigm": "gino_pres_pass", "hit": null}, {"word": "αὐτοῦ", "parse": "genitive singular masculine — “through him”", "paradigm": null, "hit": null}], "ref": "All things came to be through him."}, {"id": 5, "author": "Gospel (Vulgate parallel)", "work": "Gospel of Matthew 11:28", "latin": "Δεῦτε πρός με πάντες οἱ κοπιῶντες.", "focus": [{"word": "Δεῦτε", "parse": "adverbial imperative, 2nd pl. — “come!” (fixed form, no full paradigm)", "paradigm": null, "hit": null}, {"word": "πάντες", "parse": "nominative plural masculine — “all”", "paradigm": "pas_decl", "hit": "nom pl"}], "ref": "Come to me, all who labor."}, {"id": 6, "author": "Gospel (Vulgate parallel)", "work": "Gospel of Luke 18:13", "latin": "Ὁ θεός, ἱλάσθητί μοι τῷ ἁμαρτωλῷ.", "focus": [{"word": "ἁμαρτωλῷ", "parse": "dative singular masculine — “to the sinner”", "paradigm": "hamartolos_decl", "hit": "dat sg"}, {"word": "θεός", "parse": "nominative singular (vocative use) masculine — “God”", "paradigm": "theos_decl", "hit": "nom sg"}], "ref": "God, be merciful to me, a sinner."}, {"id": 7, "author": "Gospel (Vulgate parallel)", "work": "Gospel of Matthew 5:14", "latin": "Ὑμεῖς ἐστε τὸ φῶς τοῦ κόσμου.", "focus": [{"word": "ἐστε", "parse": "present indicative, 2nd pl. — εἰμί (“you are”)", "paradigm": "eimi_pres", "hit": "2 pl"}, {"word": "φῶς", "parse": "nominative singular neuter — predicate, “light”", "paradigm": "phos_decl", "hit": "nom sg"}], "ref": "You are the light of the world."}, {"id": 8, "author": "John (Vulgate parallel)", "work": "Gospel of John 1:5", "latin": "Καὶ τὸ φῶς ἐν τῇ σκοτίᾳ λάμπει.", "focus": [{"word": "λάμπει", "parse": "present active indicative, 3rd sg. — λάμπω (“shines”)", "paradigm": "lampo_pres_act", "hit": "3 sg"}, {"word": "φῶς", "parse": "nominative singular neuter — subject, “the light”", "paradigm": "phos_decl", "hit": "nom sg"}], "ref": "And the light shines in the darkness."}, {"id": 9, "author": "John (Vulgate parallel)", "work": "Gospel of John 3:16", "latin": "Ἵνα πᾶς ὁ πιστεύων εἰς αὐτὸν ἔχῃ ζωὴν αἰώνιον.", "focus": [{"word": "ἔχῃ", "parse": "present active subjunctive, 3rd sg. — ἔχω (“may have”)", "paradigm": "echo_pres_act", "hit": null}, {"word": "ζωὴν", "parse": "accusative singular feminine — direct object, “life”", "paradigm": "zoe_decl", "hit": "acc sg"}], "ref": "That everyone who believes in him may have eternal life."}, {"id": 10, "author": "Gospel (Vulgate parallel)", "work": "Gospel of Matthew 5:8", "latin": "Μακάριοι οἱ καθαροὶ τῇ καρδίᾳ.", "focus": [{"word": "καρδίᾳ", "parse": "dative singular feminine — “in heart”", "paradigm": "kardia_decl", "hit": "dat sg"}, {"word": "καθαροὶ", "parse": "nominative plural masculine — predicate adjective, “pure”", "paradigm": "logos_katharos_decl", "hit": null}], "ref": "Blessed are the pure in heart."}, {"id": 11, "author": "Gregory of Nazianzus", "work": "Orationes (traditional citation)", "latin": "Ἡ γνῶσις οἰδεῖ, ἡ ἀγάπη οἰκοδομεῖ.", "focus": [{"word": "γνῶσις", "parse": "nominative singular feminine — subject, “knowledge”", "paradigm": "gnosis_decl", "hit": "nom sg"}, {"word": "ἀγάπη", "parse": "nominative singular feminine — subject, “love”", "paradigm": "agape_decl", "hit": "nom sg"}], "ref": "Knowledge puffs up, love builds up."}, {"id": 12, "author": "John (Vulgate parallel)", "work": "1 John 4:16", "latin": "Ὁ θεὸς ἀγάπη ἐστίν.", "focus": [{"word": "ἐστίν", "parse": "present indicative, 3rd sg. — εἰμί (“is”)", "paradigm": "eimi_pres", "hit": "3 sg"}, {"word": "ἀγάπη", "parse": "nominative singular feminine — predicate, “love”", "paradigm": "agape_decl", "hit": "nom sg"}], "ref": "God is love."}, {"id": 13, "author": "Paul (Vulgate parallel)", "work": "1 Corinthians 13:13", "latin": "Νυνὶ δὲ μένει πίστις, ἐλπίς, ἀγάπη, τὰ τρία ταῦτα.", "focus": [{"word": "μένει", "parse": "present active indicative, 3rd sg. — μένω (“abides”)", "paradigm": "meno_pres_act", "hit": "3 sg"}, {"word": "πίστις", "parse": "nominative singular feminine — subject, “faith”", "paradigm": "pistis_decl", "hit": "nom sg"}], "ref": "And now faith, hope, love abide, these three."}, {"id": 14, "author": "Gospel (Vulgate parallel)", "work": "Gospel of Matthew 22:37", "latin": "Ἀγαπήσεις κύριον τὸν θεόν σου ἐξ ὅλης τῆς καρδίας σου.", "focus": [{"word": "θεόν", "parse": "accusative singular masculine — direct object, “God”", "paradigm": "theos_decl", "hit": "acc sg"}, {"word": "καρδίας", "parse": "genitive singular feminine — “of heart”", "paradigm": "kardia_decl", "hit": "gen sg"}], "ref": "You shall love the Lord your God with all your heart."}, {"id": 15, "author": "Gospel liturgical acclamation", "work": "Divine Liturgy (Kyrie)", "latin": "Κύριε, ἐλέησον.", "focus": [{"word": "ἐλέησον", "parse": "aorist active imperative, 2nd sg. — ἐλεέω (“have mercy!”)", "paradigm": "eleeo_pres_impv", "hit": null}, {"word": "Κύριε", "parse": "vocative singular masculine — direct address, “Lord”", "paradigm": null, "hit": null}], "ref": "Lord, have mercy."}, {"id": 16, "author": "Athanasius", "work": "De Incarnatione (traditional citation)", "latin": "Αὐτὸς γὰρ ἐνηνθρώπησεν, ἵνα ἡμεῖς θεοποιηθῶμεν.", "focus": [{"word": "θεοποιηθῶμεν", "parse": "aorist passive subjunctive, 1st pl. — θεοποιέω (“we might be made divine”)", "paradigm": null, "hit": null}, {"word": "ἡμεῖς", "parse": "nominative plural — subject pronoun, “we”", "paradigm": null, "hit": null}], "ref": "For he became man, that we might be made god (deified)."}, {"id": 17, "author": "Gospel (Vulgate parallel)", "work": "Gospel of John 14:6", "latin": "Ἐγώ εἰμι ἡ ὁδὸς καὶ ἡ ἀλήθεια καὶ ἡ ζωή.", "focus": [{"word": "εἰμι", "parse": "present indicative, 1st sg. — εἰμί (“I am”)", "paradigm": "eimi_pres", "hit": "1 sg"}, {"word": "ζωή", "parse": "nominative singular feminine — predicate, “life”", "paradigm": "zoe_decl", "hit": "nom sg"}], "ref": "I am the way, and the truth, and the life."}, {"id": 18, "author": "Basil the Great", "work": "Epistulae (traditional citation)", "latin": "Φοβοῦ τὸν θεὸν μόνον.", "focus": [{"word": "Φοβοῦ", "parse": "present imperative, 2nd sg., deponent — φοβέομαι (“fear!”)", "paradigm": "phobeo_pres_mid", "hit": null}, {"word": "θεὸν", "parse": "accusative singular masculine — direct object, “God”", "paradigm": "theos_decl", "hit": "acc sg"}], "ref": "Fear God alone."}, {"id": 19, "author": "Paul (Vulgate parallel)", "work": "Philippians 4:13", "latin": "Πάντα ἰσχύω ἐν τῷ ἐνδυναμοῦντί με.", "focus": [{"word": "ἰσχύω", "parse": "present active indicative, 1st sg. — ἰσχύω (“I am strong / I am able”)", "paradigm": "iskuo_pres_act", "hit": "1 sg"}, {"word": "ἐνδυναμοῦντί", "parse": "present active participle, dative singular masculine — ἐνδυναμόω (“the one strengthening”)", "paradigm": "endynamoo_pres_act", "hit": null}], "ref": "I can do all things in him who strengthens me."}, {"id": 20, "author": "Paul (Vulgate parallel)", "work": "Romans 8:18", "latin": "Λογίζομαι γὰρ ὅτι οὐκ ἄξια τὰ παθήματα.", "focus": [{"word": "Λογίζομαι", "parse": "present indicative, 1st sg., middle — λογίζομαι (“I reckon, consider”)", "paradigm": "logizomai_pres_mid", "hit": "1 sg"}, {"word": "παθήματα", "parse": "nominative/accusative plural neuter — “sufferings”", "paradigm": null, "hit": null}], "ref": "For I consider that the sufferings are not worthy [to be compared]."}, {"id": 21, "author": "Paul (Vulgate parallel)", "work": "Galatians 2:20", "latin": "Ζῶ δὲ οὐκέτι ἐγώ, ζῇ δὲ ἐν ἐμοὶ Χριστός.", "focus": [{"word": "Ζῶ", "parse": "present active indicative, 1st sg. — ζάω, contract verb (“I live”)", "paradigm": null, "hit": null}, {"word": "ζῇ", "parse": "present active indicative, 3rd sg. — ζάω (“lives”)", "paradigm": null, "hit": null}], "ref": "And I no longer live, but Christ lives in me."}, {"id": 22, "author": "Ignatius of Antioch", "work": "Epistula ad Romanos (traditional citation)", "latin": "Σῖτός εἰμι θεοῦ.", "focus": [{"word": "εἰμι", "parse": "present indicative, 1st sg. — εἰμί (“I am”)", "paradigm": "eimi_pres", "hit": "1 sg"}, {"word": "θεοῦ", "parse": "genitive singular masculine — “of God”", "paradigm": "theos_decl", "hit": "gen sg"}], "ref": "I am the wheat of God."}, {"id": 23, "author": "Paul (Vulgate parallel)", "work": "Romans 8:26", "latin": "Τὸ πνεῦμα συναντιλαμβάνεται τῇ ἀσθενείᾳ ἡμῶν.", "focus": [{"word": "πνεῦμα", "parse": "nominative singular neuter — subject, “the Spirit”", "paradigm": "pneuma_decl", "hit": "nom sg"}, {"word": "συναντιλαμβάνεται", "parse": "present indicative, 3rd sg., middle — “helps, takes hold together with”", "paradigm": null, "hit": null}], "ref": "The Spirit helps our weakness."}, {"id": 24, "author": "Paul (Vulgate parallel)", "work": "1 Thessalonians 5:17", "latin": "Ἀδιαλείπτως προσεύχεσθε.", "focus": [{"word": "προσεύχεσθε", "parse": "present imperative, 2nd pl., deponent — προσεύχομαι (“pray!”)", "paradigm": "prosevchomai_pres_mid", "hit": "2 pl"}, {"word": "Ἀδιαλείπτως", "parse": "adverb — “unceasingly, without leaving off”", "paradigm": "adialeiptos_note", "hit": null}], "ref": "Pray without ceasing."}, {"id": 25, "author": "Evagrius Ponticus (traditional citation)", "work": "De Oratione", "latin": "Εἰ θεολόγος εἶ, προσεύξῃ ἀληθῶς.", "focus": [{"word": "εἶ", "parse": "present indicative, 2nd sg. — εἰμί (“you are”)", "paradigm": "eimi_pres", "hit": "2 sg"}, {"word": "προσεύξῃ", "parse": "future indicative, 2nd sg., deponent — προσεύχομαι (“you will pray”)", "paradigm": null, "hit": null}], "ref": "If you are a theologian, you will pray truly."}, {"id": 26, "author": "Maximus the Confessor (traditional citation)", "work": "Capita de Caritate", "latin": "Θεωρία χωρὶς πράξεως ἀσφαλὴς οὐκ ἔστιν.", "focus": [{"word": "Θεωρία", "parse": "nominative singular feminine — subject, “contemplation”", "paradigm": "theoria_decl", "hit": "nom sg"}, {"word": "πράξεως", "parse": "genitive singular feminine — “of practice/action”", "paradigm": "praxis_decl", "hit": "gen sg"}], "ref": "Contemplation without practice is not secure."}, {"id": 27, "author": "John Climacus", "work": "Scala Paradisi (traditional citation)", "latin": "Ἀναβαίνωμεν, ἀδελφοί, ἀναβαίνωμεν.", "focus": [{"word": "Ἀναβαίνωμεν", "parse": "present active subjunctive, 1st pl. (hortatory) — ἀναβαίνω (“let us climb”)", "paradigm": "anabaino_pres_act", "hit": null}, {"word": "ἀδελφοί", "parse": "vocative plural masculine — direct address, “brothers”", "paradigm": null, "hit": null}], "ref": "Let us climb, brothers, let us climb."}, {"id": 28, "author": "Gospel (Vulgate parallel)", "work": "Gospel of Matthew 5:9", "latin": "Μακάριοι οἱ εἰρηνοποιοί, ὅτι αὐτοὶ υἱοὶ θεοῦ κληθήσονται.", "focus": [{"word": "κληθήσονται", "parse": "future passive indicative, 3rd pl. — καλέω (“they will be called”)", "paradigm": null, "hit": null}, {"word": "θεοῦ", "parse": "genitive singular masculine — “of God”", "paradigm": "theos_decl", "hit": "gen sg"}], "ref": "Blessed are the peacemakers, for they will be called sons of God."}, {"id": 29, "author": "Basil the Great", "work": "Hexaemeron (traditional citation)", "latin": "Ἐν ἀρχῇ ἐποίησεν ὁ θεός· ἐν ἀρχῇ σοφίας φόβος κυρίου.", "focus": [{"word": "σοφίας", "parse": "genitive singular feminine — “of wisdom”", "paradigm": "sophia_decl", "hit": "gen sg"}, {"word": "ἀρχῇ", "parse": "dative singular feminine — “in the beginning”", "paradigm": "arche_decl", "hit": "dat sg"}], "ref": "In the beginning God made [the heavens]; the fear of the Lord is the beginning of wisdom."}, {"id": 30, "author": "John (Vulgate parallel)", "work": "1 John 3:2", "latin": "Ὀψόμεθα αὐτὸν καθώς ἐστιν.", "focus": [{"word": "Ὀψόμεθα", "parse": "future indicative, 1st pl., deponent middle — ὁράω (“we shall see”)", "paradigm": "orao_perf", "hit": "1 pl"}, {"word": "ἐστιν", "parse": "present indicative, 3rd sg. — εἰμί (“is”)", "paradigm": "eimi_pres", "hit": "3 sg"}], "ref": "We shall see him as he is."}, {"id": 31, "author": "Paul (Greek NT)", "work": "1 Corinthians 15:55", "latin": "Ποῦ σου, θάνατε, τὸ νῖκος; ποῦ σου, θάνατε, τὸ κέντρον;", "focus": [{"word": "θάνατε", "parse": "vocative singular masculine — direct address, “O death”", "paradigm": "thanatos_decl", "hit": "voc sg"}, {"word": "νῖκος", "parse": "nominative singular neuter — subject, “victory”", "paradigm": "nikos_decl", "hit": "nom sg"}], "ref": "O death, where is your victory? O death, where is your sting?"}, {"id": 32, "author": "Septuagint", "work": "Genesis 3:19 (LXX)", "latin": "Γῆ εἶ καὶ εἰς γῆν ἀπελεύσῃ.", "focus": [{"word": "εἶ", "parse": "present indicative, 2nd sg. — εἰμί (“you are”)", "paradigm": "eimi_pres", "hit": "2 sg"}, {"word": "ἀπελεύσῃ", "parse": "future indicative, 2nd sg., deponent — ἀπέρχομαι (“you will depart”)", "paradigm": "aperchomai_fut_mid", "hit": "2 sg"}], "ref": "Earth you are, and to earth you shall depart."}, {"id": 33, "author": "Septuagint", "work": "Job 14:2 (LXX)", "latin": "Ὥσπερ ἄνθος ἀνθῆσαν ἐξέπεσεν, ἄνθρωπος ὀλιγόβιος.", "focus": [{"word": "ἐξέπεσεν", "parse": "aorist active indicative, 3rd sg. — ἐκπίπτω (“fell away”)", "paradigm": "ekpipto_aor_act", "hit": "3 sg"}, {"word": "ὀλιγόβιος", "parse": "nominative singular masculine — predicate adjective, “short-lived”", "paradigm": "oligobios_decl", "hit": "nom sg"}], "ref": "Like a flower he blossomed and fell away, man who is short-lived."}, {"id": 34, "author": "Greek NT", "work": "Hebrews 9:27", "latin": "Ἀπόκειται τοῖς ἀνθρώποις ἅπαξ ἀποθανεῖν, μετὰ δὲ τοῦτο κρίσις.", "focus": [{"word": "ἀποθανεῖν", "parse": "aorist active infinitive — ἀποθνῄσκω (“to die”)", "paradigm": "apothnesko_aor_act", "hit": null}, {"word": "Ἀπόκειται", "parse": "present indicative, 3rd sg. — ἀπόκειμαι (“it is appointed”)", "paradigm": "apokeimai_pres", "hit": "3 sg"}], "ref": "It is appointed for men to die once, and after this the judgment."}, {"id": 35, "author": "John Chrysostom", "work": "Paschal Homily (traditional citation)", "latin": "Ἀνέστη Χριστός, καὶ νεκρὸς οὐδεὶς ἐπὶ μνήματος.", "focus": [{"word": "Ἀνέστη", "parse": "aorist active indicative, 3rd sg. — ἀνίστημι (“arose”)", "paradigm": "anistemi_aor_act", "hit": "3 sg"}, {"word": "νεκρὸς", "parse": "nominative singular masculine — subject, “dead [one]”", "paradigm": "nekros_decl", "hit": "nom sg"}], "ref": "Christ is risen, and not one dead remains in the tomb."}, {"id": 36, "author": "Paul (Greek NT)", "work": "Philippians 1:21", "latin": "Ἐμοὶ γὰρ τὸ ζῆν Χριστὸς καὶ τὸ ἀποθανεῖν κέρδος.", "focus": [{"word": "ζῆν", "parse": "present active infinitive — ζάω (“to live”)", "paradigm": "zao_pres_act", "hit": null}, {"word": "ἀποθανεῖν", "parse": "aorist active infinitive — ἀποθνῄσκω (“to die”)", "paradigm": "apothnesko_aor_act", "hit": null}], "ref": "For to me, to live is Christ, and to die is gain."}, {"id": 37, "author": "Paul (Greek NT)", "work": "Romans 6:23", "latin": "Τὰ γὰρ ὀψώνια τῆς ἁμαρτίας θάνατος.", "focus": [{"word": "θάνατος", "parse": "nominative singular masculine — predicate, “death”", "paradigm": "thanatos_decl", "hit": "nom sg"}, {"word": "ὀψώνια", "parse": "nominative plural neuter — subject, “wages”", "paradigm": "opsonia_decl", "hit": "nom pl"}], "ref": "For the wages of sin is death."}, {"id": 38, "author": "Greek NT", "work": "John 11:25", "latin": "Ἐγώ εἰμι ἡ ἀνάστασις καὶ ἡ ζωή· ὁ πιστεύων εἰς ἐμέ, κἂν ἀποθάνῃ, ζήσεται.", "focus": [{"word": "ἀποθάνῃ", "parse": "aorist active subjunctive, 3rd sg. — ἀποθνῄσκω (“should he die”)", "paradigm": "apothnesko_aor_subj", "hit": "3 sg"}, {"word": "ζήσεται", "parse": "future indicative, 3rd sg., middle — ζάω (“he will live”)", "paradigm": "zao_fut_mid", "hit": "3 sg"}], "ref": "I am the resurrection and the life; he who believes in me, though he die, yet shall he live."}, {"id": 39, "author": "Greek NT", "work": "James 4:14", "latin": "Ποία γὰρ ἡ ζωὴ ὑμῶν; ἀτμὶς γάρ ἐστε ἡ πρὸς ὀλίγον φαινομένη.", "focus": [{"word": "ἀτμὶς", "parse": "nominative singular feminine — predicate, “mist, vapor”", "paradigm": "atmis_decl", "hit": "nom sg"}, {"word": "ἐστε", "parse": "present indicative, 2nd pl. — εἰμί (“you are”)", "paradigm": "eimi_pres", "hit": "2 pl"}], "ref": "For what is your life? You are a mist that appears for a little while."}, {"id": 40, "author": "Greek NT", "work": "Revelation 21:4", "latin": "Καὶ ὁ θάνατος οὐκ ἔσται ἔτι, οὔτε πένθος οὔτε κραυγὴ οὔτε πόνος οὐκ ἔσται ἔτι.", "focus": [{"word": "ἔσται", "parse": "future indicative, 3rd sg. — εἰμί (“will be”)", "paradigm": "eimi_fut", "hit": "3 sg"}, {"word": "θάνατος", "parse": "nominative singular masculine — subject, “death”", "paradigm": "thanatos_decl", "hit": "nom sg"}], "ref": "And death shall be no more, neither shall there be mourning, nor crying, nor pain any more."}],
+    paradigms: {"eimi_pres": {"title": "εἰμί — present indicative", "rows": [["1 sg", "εἰμί"], ["2 sg", "εἶ"], ["3 sg", "ἐστίν"], ["1 pl", "ἐσμέν"], ["2 pl", "ἐστέ"], ["3 pl", "εἰσίν"]]}, "eimi_impf": {"title": "εἰμί — imperfect indicative", "rows": [["1 sg", "ἤμην"], ["2 sg", "ἦς"], ["3 sg", "ἦν"], ["1 pl", "ἦμεν"], ["2 pl", "ἦτε"], ["3 pl", "ἦσαν"]]}, "logos_decl": {"title": "ὁ λόγος, -ου — 2nd declension masculine", "rows": [["nom sg", "λόγος"], ["gen sg", "λόγου"], ["dat sg", "λόγῳ"], ["acc sg", "λόγον"], ["voc sg", "λόγε"], ["nom pl", "λόγοι"], ["gen pl", "λόγων"], ["dat pl", "λόγοις"], ["acc pl", "λόγους"]]}, "agapao_aor_act": {"title": "ἀγαπάω, ἀγαπῆσαι — aorist active indicative", "rows": [["1 sg", "ἠγάπησα"], ["2 sg", "ἠγάπησας"], ["3 sg", "ἠγάπησεν"], ["1 pl", "ἠγαπήσαμεν"], ["2 pl", "ἠγαπήσατε"], ["3 pl", "ἠγάπησαν"]], "note": "ἀγαπάω is a contract verb (stem in -α); the augment ἠ- marks the aorist/imperfect."}, "theos_decl": {"title": "ὁ θεός, -οῦ — 2nd declension masculine", "rows": [["nom sg", "θεός"], ["gen sg", "θεοῦ"], ["dat sg", "θεῷ"], ["acc sg", "θεόν"], ["nom pl", "θεοί"], ["gen pl", "θεῶν"], ["dat pl", "θεοῖς"], ["acc pl", "θεούς"]]}, "poieo_aor_act": {"title": "ποιέω, ποιῆσαι — aorist active indicative", "rows": [["1 sg", "ἐποίησα"], ["2 sg", "ἐποίησας"], ["3 sg", "ἐποίησεν"], ["1 pl", "ἐποιήσαμεν"], ["2 pl", "ἐποιήσατε"], ["3 pl", "ἐποίησαν"]]}, "ouranos_decl": {"title": "ὁ οὐρανός, -οῦ — 2nd declension masculine", "rows": [["nom sg", "οὐρανός"], ["gen sg", "οὐρανοῦ"], ["dat sg", "οὐρανῷ"], ["acc sg", "οὐρανόν"], ["nom pl", "οὐρανοί"], ["gen pl", "οὐρανῶν"], ["dat pl", "οὐρανοῖς"], ["acc pl", "οὐρανούς"]]}, "gino_pres_pass": {"title": "γίνομαι — present indicative (middle/passive deponent)", "rows": [["1 sg", "γίνομαι"], ["2 sg", "γίνῃ"], ["3 sg", "γίνεται"], ["1 pl", "γινόμεθα"], ["2 pl", "γίνεσθε"], ["3 pl", "γίνονται"]], "note": "Deponent: middle-passive form, active sense (“I become / come to be”)."}, "erchomai_pres": {"title": "ἔρχομαι — present indicative (middle/passive deponent)", "rows": [["1 sg", "ἔρχομαι"], ["2 sg", "ἔρχῃ"], ["3 sg", "ἔρχεται"], ["1 pl", "ἐρχόμεθα"], ["2 pl", "ἔρχεσθε"], ["3 pl", "ἔρχονται"]], "note": "Deponent verb of motion: “I come/go,” middle form with active meaning."}, "eido_perf": {"title": "οἶδα — perfect indicative (present force)", "rows": [["1 sg", "οἶδα"], ["2 sg", "οἶδας"], ["3 sg", "οἶδεν"], ["1 pl", "οἴδαμεν"], ["2 pl", "οἴδατε"], ["3 pl", "οἴδασιν"]], "note": "A perfect form used with present meaning, “I know” (from the root seen in εἶδον, “I saw”)."}, "agape_decl": {"title": "ἡ ἀγάπη, -ης — 1st declension feminine", "rows": [["nom sg", "ἀγάπη"], ["gen sg", "ἀγάπης"], ["dat sg", "ἀγάπῃ"], ["acc sg", "ἀγάπην"], ["nom pl", "ἀγάπαι"], ["gen pl", "ἀγαπῶν"], ["dat pl", "ἀγάπαις"], ["acc pl", "ἀγάπας"]]}, "meno_pres_act": {"title": "μένω — present active indicative", "rows": [["1 sg", "μένω"], ["2 sg", "μένεις"], ["3 sg", "μένει"], ["1 pl", "μένομεν"], ["2 pl", "μένετε"], ["3 pl", "μένουσιν"]]}, "pistis_decl": {"title": "ἡ πίστις, -εως — 3rd declension feminine", "rows": [["nom sg", "πίστις"], ["gen sg", "πίστεως"], ["dat sg", "πίστει"], ["acc sg", "πίστιν"], ["nom pl", "πίστεις"], ["gen pl", "πίστεων"], ["dat pl", "πίστεσιν"], ["acc pl", "πίστεις"]]}, "agapao_pres_impv": {"title": "ἀγαπάω — present active imperative", "rows": [["2 sg", "ἀγάπα"], ["2 pl", "ἀγαπᾶτε"], ["3 sg", "ἀγαπάτω"], ["3 pl", "ἀγαπάτωσαν"]], "note": "Greek has true 3rd-person imperatives (“let him love”), unlike Latin."}, "pas_decl": {"title": "πᾶς, πᾶσα, πᾶν — 3rd/1st declension adjective", "cols": ["masc", "fem", "neut"], "rows": [["nom sg", "πᾶς", "πᾶσα", "πᾶν"], ["gen sg", "παντός", "πάσης", "παντός"], ["dat sg", "παντί", "πάσῃ", "παντί"], ["acc sg", "πάντα", "πᾶσαν", "πᾶν"], ["nom pl", "πάντες", "πᾶσαι", "πάντα"], ["gen pl", "πάντων", "πασῶν", "πάντων"]]}, "eleeo_pres_impv": {"title": "ἐλεέω — present active imperative", "rows": [["2 sg", "ἐλέει"], ["2 pl", "ἐλεεῖτε"], ["3 sg", "ἐλεείτω"]], "note": "From this verb comes the liturgical cry Κύριε ἐλέησον (aorist imperative), “Lord, have mercy.”"}, "hamartolos_decl": {"title": "ὁ ἁμαρτωλός, -οῦ — 2nd declension masculine", "rows": [["nom sg", "ἁμαρτωλός"], ["gen sg", "ἁμαρτωλοῦ"], ["dat sg", "ἁμαρτωλῷ"], ["acc sg", "ἁμαρτωλόν"], ["voc sg", "ἁμαρτωλέ"]]}, "phos_decl": {"title": "τὸ φῶς, φωτός — 3rd declension neuter", "rows": [["nom sg", "φῶς"], ["gen sg", "φωτός"], ["dat sg", "φωτί"], ["acc sg", "φῶς"], ["nom pl", "φῶτα"], ["gen pl", "φώτων"], ["dat pl", "φωσίν"], ["acc pl", "φῶτα"]]}, "lampo_pres_act": {"title": "λάμπω — present active indicative", "rows": [["1 sg", "λάμπω"], ["2 sg", "λάμπεις"], ["3 sg", "λάμπει"], ["1 pl", "λάμπομεν"], ["2 pl", "λάμπετε"], ["3 pl", "λάμπουσιν"]]}, "zoe_decl": {"title": "ἡ ζωή, -ῆς — 1st declension feminine", "rows": [["nom sg", "ζωή"], ["gen sg", "ζωῆς"], ["dat sg", "ζωῇ"], ["acc sg", "ζωήν"]]}, "echo_pres_act": {"title": "ἔχω — present active indicative", "rows": [["1 sg", "ἔχω"], ["2 sg", "ἔχεις"], ["3 sg", "ἔχει"], ["1 pl", "ἔχομεν"], ["2 pl", "ἔχετε"], ["3 pl", "ἔχουσιν"]]}, "kardia_decl": {"title": "ἡ καρδία, -ας — 1st declension feminine", "rows": [["nom sg", "καρδία"], ["gen sg", "καρδίας"], ["dat sg", "καρδίᾳ"], ["acc sg", "καρδίαν"]]}, "kathairo_pres_pass": {"title": "καθαίρω — present passive indicative", "rows": [["1 sg", "καθαίρομαι"], ["2 sg", "καθαίρῃ"], ["3 sg", "καθαίρεται"], ["1 pl", "καθαιρόμεθα"], ["2 pl", "καθαίρεσθε"], ["3 pl", "καθαίρονται"]]}, "gnosis_decl": {"title": "ἡ γνῶσις, -εως — 3rd declension feminine", "rows": [["nom sg", "γνῶσις"], ["gen sg", "γνώσεως"], ["dat sg", "γνώσει"], ["acc sg", "γνῶσιν"]]}, "arche_decl": {"title": "ἡ ἀρχή, -ῆς — 1st declension feminine", "rows": [["nom sg", "ἀρχή"], ["gen sg", "ἀρχῆς"], ["dat sg", "ἀρχῇ"], ["acc sg", "ἀρχήν"]]}, "sophia_decl": {"title": "ἡ σοφία, -ας — 1st declension feminine", "rows": [["nom sg", "σοφία"], ["gen sg", "σοφίας"], ["dat sg", "σοφίᾳ"], ["acc sg", "σοφίαν"]]}, "phobeo_pres_mid": {"title": "φοβέομαι — present indicative (middle/passive deponent)", "rows": [["1 sg", "φοβέομαι"], ["2 sg", "φοβῇ"], ["3 sg", "φοβεῖται"], ["1 pl", "φοβούμεθα"], ["2 pl", "φοβεῖσθε"], ["3 pl", "φοβοῦνται"]], "note": "Deponent: “I fear/am in awe of,” middle-passive in form, active in sense."}, "dynamai_pres": {"title": "δύναμαι — present indicative (middle/passive deponent)", "rows": [["1 sg", "δύναμαι"], ["2 sg", "δύνασαι"], ["3 sg", "δύναται"], ["1 pl", "δυνάμεθα"], ["2 pl", "δύνασθε"], ["3 pl", "δύνανται"]], "note": "“I am able,” a deponent verb — no separate active form exists in Koine."}, "iskuo_pres_act": {"title": "ἰσχύω — present active indicative", "rows": [["1 sg", "ἰσχύω"], ["2 sg", "ἰσχύεις"], ["3 sg", "ἰσχύει"], ["1 pl", "ἰσχύομεν"], ["2 pl", "ἰσχύετε"], ["3 pl", "ἰσχύουσιν"]]}, "endynamoo_pres_act": {"title": "ἐνδυναμόω — present active indicative", "rows": [["1 sg", "ἐνδυναμῶ"], ["2 sg", "ἐνδυναμοῖς"], ["3 sg", "ἐνδυναμοῖ"], ["1 pl", "ἐνδυναμοῦμεν"], ["2 pl", "ἐνδυναμοῦτε"], ["3 pl", "ἐνδυναμοῦσιν"]], "note": "Contract verb in -ο; contraction with the thematic vowel produces -οῖ, -οῦμεν, etc."}, "logizomai_pres_mid": {"title": "λογίζομαι — present indicative (middle)", "rows": [["1 sg", "λογίζομαι"], ["2 sg", "λογίζῃ"], ["3 sg", "λογίζεται"], ["1 pl", "λογιζόμεθα"], ["2 pl", "λογίζεσθε"], ["3 pl", "λογίζονται"]], "note": "True middle sense here: “I reckon/account to myself.”"}, "sarx_decl": {"title": "ἡ σάρξ, σαρκός — 3rd declension feminine", "rows": [["nom sg", "σάρξ"], ["gen sg", "σαρκός"], ["dat sg", "σαρκί"], ["acc sg", "σάρκα"]]}, "pneuma_decl": {"title": "τὸ πνεῦμα, -ατος — 3rd declension neuter", "rows": [["nom sg", "πνεῦμα"], ["gen sg", "πνεύματος"], ["dat sg", "πνεύματι"], ["acc sg", "πνεῦμα"], ["nom pl", "πνεύματα"], ["gen pl", "πνευμάτων"]]}, "prosevchomai_pres_mid": {"title": "προσεύχομαι — present indicative (middle/passive deponent)", "rows": [["1 sg", "προσεύχομαι"], ["2 sg", "προσεύχῃ"], ["3 sg", "προσεύχεται"], ["1 pl", "προσευχόμεθα"], ["2 pl", "προσεύχεσθε"], ["3 pl", "προσεύχονται"]], "note": "“I pray” — deponent, middle form."}, "adialeiptos_note": {"title": "ἀδιαλείπτως — adverb (no declension)", "rows": [["form", "ἀδιαλείπτως"]], "note": "Adverbs in -ως do not decline; this one is built on the verbal root λείπω (“to leave off”) with the negating prefix ἀ- and the compound δια-: “without leaving off,” i.e. unceasingly."}, "theoria_decl": {"title": "ἡ θεωρία, -ας — 1st declension feminine", "rows": [["nom sg", "θεωρία"], ["gen sg", "θεωρίας"], ["dat sg", "θεωρίᾳ"], ["acc sg", "θεωρίαν"]]}, "praxis_decl": {"title": "ἡ πρᾶξις, -εως — 3rd declension feminine", "rows": [["nom sg", "πρᾶξις"], ["gen sg", "πράξεως"], ["dat sg", "πράξει"], ["acc sg", "πρᾶξιν"]]}, "anabaino_pres_act": {"title": "ἀναβαίνω — present active indicative", "rows": [["1 sg", "ἀναβαίνω"], ["2 sg", "ἀναβαίνεις"], ["3 sg", "ἀναβαίνει"], ["1 pl", "ἀναβαίνομεν"], ["2 pl", "ἀναβαίνετε"], ["3 pl", "ἀναβαίνουσιν"]]}, "theosis_note": {"title": "ἡ θέωσις, -εως — 3rd declension feminine", "rows": [["nom sg", "θέωσις"], ["gen sg", "θεώσεως"], ["dat sg", "θεώσει"], ["acc sg", "θέωσιν"]], "note": "A key patristic technical term (deification/divinization), built on the same root as θεός."}, "logos_katharos_decl": {"title": "καθαρός, -ά, -όν — 1st/2nd declension adjective (masc)", "rows": [["nom sg", "καθαρός"], ["gen sg", "καθαροῦ"], ["dat sg", "καθαρῷ"], ["acc sg", "καθαρόν"]], "note": "Fem: καθαρά, -ᾶς; neut: καθαρόν, -οῦ."}, "orao_perf": {"title": "ὁράω — future middle indicative (used as the future of ὁράω)", "rows": [["1 sg", "ὄψομαι"], ["2 sg", "ὄψῃ"], ["3 sg", "ὄψεται"], ["1 pl", "ὀψόμεθα"], ["2 pl", "ὄψεσθε"], ["3 pl", "ὄψονται"]], "note": "ὁράω is suppletive: its future comes from a different root (ὀπ-), and is deponent middle in form."}, "thanatos_decl": {"title": "ὁ θάνατος, -ου — 2nd declension masculine", "rows": [["nom sg", "θάνατος"], ["gen sg", "θανάτου"], ["dat sg", "θανάτῳ"], ["acc sg", "θάνατον"], ["voc sg", "θάνατε"]]}, "nikos_decl": {"title": "τὸ νῖκος, νίκους — 3rd declension neuter (σ-stem)", "rows": [["nom sg", "νῖκος"], ["gen sg", "νίκους"], ["dat sg", "νίκει"], ["acc sg", "νῖκος"]], "note": "An unusual Hebraism-influenced form of νίκη (“victory”), found in this exact verse."}, "aperchomai_fut_mid": {"title": "ἀπέρχομαι — future indicative (middle/passive deponent)", "rows": [["1 sg", "ἀπελεύσομαι"], ["2 sg", "ἀπελεύσῃ"], ["3 sg", "ἀπελεύσεται"], ["1 pl", "ἀπελευσόμεθα"], ["2 pl", "ἀπελεύσεσθε"], ["3 pl", "ἀπελεύσονται"]]}, "ekpipto_aor_act": {"title": "ἐκπίπτω — 2nd aorist active indicative", "rows": [["1 sg", "ἐξέπεσον"], ["2 sg", "ἐξέπεσες"], ["3 sg", "ἐξέπεσεν"], ["1 pl", "ἐξεπέσομεν"], ["2 pl", "ἐξεπέσετε"], ["3 pl", "ἐξέπεσον"]], "note": "A 2nd (thematic) aorist: endings match the imperfect, not the 1st aorist -σα forms."}, "oligobios_decl": {"title": "ὀλιγόβιος, -ον — 2nd declension adjective (masc)", "rows": [["nom sg", "ὀλιγόβιος"], ["gen sg", "ὀλιγοβίου"], ["dat sg", "ὀλιγοβίῳ"], ["acc sg", "ὀλιγόβιον"]], "note": "Compound: ὀλίγος (“little”) + βίος (“life”) — “short-lived.”"}, "apothnesko_aor_act": {"title": "ἀποθνῄσκω — 2nd aorist active indicative", "rows": [["1 sg", "ἀπέθανον"], ["2 sg", "ἀπέθανες"], ["3 sg", "ἀπέθανεν"], ["1 pl", "ἀπεθάνομεν"], ["2 pl", "ἀπεθάνετε"], ["3 pl", "ἀπέθανον"]], "note": "The infinitive ἀποθανεῖν (“to die”) is built on this same aorist stem."}, "apokeimai_pres": {"title": "ἀπόκειμαι — present indicative (middle/passive)", "rows": [["1 sg", "ἀπόκειμαι"], ["2 sg", "ἀπόκεισαι"], ["3 sg", "ἀπόκειται"], ["1 pl", "ἀποκείμεθα"], ["2 pl", "ἀπόκεισθε"], ["3 pl", "ἀπόκεινται"]], "note": "“It is laid up, appointed, reserved” — used impersonally here."}, "anistemi_aor_act": {"title": "ἀνίστημι — root aorist active indicative (intransitive)", "rows": [["1 sg", "ἀνέστην"], ["2 sg", "ἀνέστης"], ["3 sg", "ἀνέστη"], ["1 pl", "ἀνέστημεν"], ["2 pl", "ἀνέστητε"], ["3 pl", "ἀνέστησαν"]], "note": "A -μι verb; this root aorist is intransitive (“rose up”), distinct from the transitive sigmatic aorist ἔστησα (“I made stand”)."}, "nekros_decl": {"title": "νεκρός, -ά, -όν (used as noun) — 2nd declension masculine", "rows": [["nom sg", "νεκρός"], ["gen sg", "νεκροῦ"], ["dat sg", "νεκρῷ"], ["acc sg", "νεκρόν"]]}, "zao_pres_act": {"title": "ζάω — present active indicative (contract verb)", "rows": [["1 sg", "ζῶ"], ["2 sg", "ζῇς"], ["3 sg", "ζῇ"], ["1 pl", "ζῶμεν"], ["2 pl", "ζῆτε"], ["3 pl", "ζῶσιν"]], "note": "Contract verb in -α; the infinitive ζῆν is likewise a contracted form (ζάειν → ζῆν)."}, "opsonia_decl": {"title": "τὸ ὀψώνιον, -ου — 2nd declension neuter", "rows": [["nom sg", "ὀψώνιον"], ["gen sg", "ὀψωνίου"], ["nom pl", "ὀψώνια"], ["gen pl", "ὀψωνίων"], ["dat pl", "ὀψωνίοις"]], "note": "Originally “rations, soldier's pay” — Paul's image is that death is what sin pays out."}, "apothnesko_aor_subj": {"title": "ἀποθνῄσκω — 2nd aorist active subjunctive", "rows": [["1 sg", "ἀποθάνω"], ["2 sg", "ἀποθάνῃς"], ["3 sg", "ἀποθάνῃ"], ["1 pl", "ἀποθάνωμεν"], ["2 pl", "ἀποθάνητε"], ["3 pl", "ἀποθάνωσιν"]]}, "zao_fut_mid": {"title": "ζάω — future indicative (middle/deponent)", "rows": [["1 sg", "ζήσομαι"], ["2 sg", "ζήσῃ"], ["3 sg", "ζήσεται"], ["1 pl", "ζησόμεθα"], ["2 pl", "ζήσεσθε"], ["3 pl", "ζήσονται"]]}, "atmis_decl": {"title": "ἡ ἀτμίς, -ίδος — 3rd declension feminine", "rows": [["nom sg", "ἀτμίς"], ["gen sg", "ἀτμίδος"], ["dat sg", "ἀτμίδι"], ["acc sg", "ἀτμίδα"]]}, "eimi_fut": {"title": "εἰμί — future indicative", "rows": [["1 sg", "ἔσομαι"], ["2 sg", "ἔσῃ"], ["3 sg", "ἔσται"], ["1 pl", "ἐσόμεθα"], ["2 pl", "ἔσεσθε"], ["3 pl", "ἔσονται"]]}},
+    storageKey: "lectio_greek_history",
+    firstUseKey: "lectio_greek_first_use",
+    idbKey: "lastCompleted_greek",
+    displayFont: "'Gentium Plus', serif",
+    label: "Greek"
+  }
+};
+
+const DAY_MS = 86400000;
+const EPOCH = new Date("2026-01-01T00:00:00Z").getTime();
+const REMINDERS_KEY = "lectio_reminders";
+const CURRENT_LANG_KEY = "lectio_current_lang";
+const IDB_NAME = "lectio-sw-merged";
+
+let currentLang = localStorage.getItem(CURRENT_LANG_KEY) || "latin";
+let viewingDateKey = null;
+let historyStore = {
+  latin: loadHistory("latin"),
+  greek: loadHistory("greek")
+};
+
+function dateKeyOf(d){ return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
+function todayKey(){ return dateKeyOf(new Date()); }
+function parseDateKey(key){ const [y,m,d] = key.split("-").map(Number); return new Date(y, m-1, d); }
+function dayIndexForDate(d){
+  const utcMidnight = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  return Math.floor((utcMidnight - EPOCH) / DAY_MS);
+}
+function sentenceForDate(lang, d){
+  const arr = LANGS[lang].sentences;
+  const idx = ((dayIndexForDate(d) % arr.length) + arr.length) % arr.length;
+  return arr[idx];
+}
+function dropInitial(latin){ return { initial: latin.charAt(0), rest: latin.slice(1) }; }
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function loadHistory(lang){
+  try{ const raw = localStorage.getItem(LANGS[lang].storageKey); return raw ? JSON.parse(raw) : {}; }
+  catch(e){ return {}; }
+}
+function saveHistory(lang){
+  try{ localStorage.setItem(LANGS[lang].storageKey, JSON.stringify(historyStore[lang])); }
+  catch(e){ console.error("Could not save", e); }
+}
+
+function ensureFirstUse(lang){
+  const key = LANGS[lang].firstUseKey;
+  if(!localStorage.getItem(key)){ localStorage.setItem(key, todayKey()); }
+  return localStorage.getItem(key);
+}
+
+function mirrorCompletion(lang, dateKey){
+  try{
+    const open = indexedDB.open(IDB_NAME, 1);
+    open.onupgradeneeded = () => open.result.createObjectStore("kv");
+    open.onsuccess = () => {
+      const db = open.result;
+      const tx = db.transaction("kv", "readwrite");
+      tx.objectStore("kv").put(dateKey, LANGS[lang].idbKey);
+    };
+  } catch(e){ /* non-fatal */ }
+}
+
+function computeStreak(lang){
+  let streak = 0;
+  let cursor = new Date();
+  const h = historyStore[lang];
+  const tKey = todayKey();
+  if(!h[tKey] || h[tKey].status === 'skipped'){
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  while(true){
+    const key = dateKeyOf(cursor);
+    const entry = h[key];
+    if(entry && (entry.status === 'good' || entry.status === 'mixed')){
+      streak++;
+      cursor.setDate(cursor.getDate() - 1);
+    } else { break; }
+  }
+  return streak;
+}
+function renderStreak(){
+  const streak = computeStreak(currentLang);
+  document.getElementById('streakNum').textContent = streak + (streak === 1 ? ' day' : ' days');
+  const ticks = Math.min(streak, 10);
+  let marks = '';
+  for(let i=0;i<ticks;i++){ marks += '<span class="tick">I</span>'; if((i+1)%5===0) marks += ' '; }
+  document.getElementById('streakMarks').innerHTML = marks;
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function paradigmHtml(key, hit){
+  if(!key) return '';
+  const p = LANGS[currentLang].paradigms[key];
+  if(!p) return '';
+  if(p.cols){
+    let head = '<tr><th></th>' + p.cols.map(c => `<th>${escapeHtml(c)}</th>`).join('') + '</tr>';
+    let rows = '';
+    p.rows.forEach(r => {
+      const lbl = r[0];
+      const forms = r.slice(1);
+      const cells = forms.map(f => {
+        const isHit = hit && lbl === hit;
+        return `<td class="frm${isHit ? ' hit':''}">${escapeHtml(f)}</td>`;
+      }).join('');
+      rows += `<tr><td class="lbl">${escapeHtml(lbl)}</td>${cells}</tr>`;
+    });
+    const note = p.note ? `<div class="paradigm-note">${escapeHtml(p.note)}</div>` : '';
+    return `<div class="paradigm"><div class="paradigm-title">${escapeHtml(p.title)}</div><table>${head}${rows}</table>${note}</div>`;
+  } else {
+    let rows = '';
+    p.rows.forEach(([lbl, frm]) => {
+      const isHit = hit && lbl === hit;
+      rows += `<tr class="${isHit ? 'hit' : ''}"><td class="lbl">${escapeHtml(lbl)}</td><td class="frm">${escapeHtml(frm)}</td></tr>`;
+    });
+    const note = p.note ? `<div class="paradigm-note">${escapeHtml(p.note)}</div>` : '';
+    return `<div class="paradigm"><div class="paradigm-title">${escapeHtml(p.title)}</div><table>${rows}</table>${note}</div>`;
+  }
+}
+
+function buildCheckinText(lang, dateKey, sentence, entry){
+  const lines = [];
+  lines.push(`Lectio Quotidiana (${LANGS[lang].label}) — ${dateKey}`);
+  lines.push(`${sentence.author}, ${sentence.work}`);
+  lines.push(sentence.latin);
+  lines.push('');
+  (entry.answers.focus || []).forEach((a, i) => {
+    lines.push(`${sentence.focus[i].word}: ${a || '(blank)'} — self-check: ${entry.assessment.focus[i]}`);
+  });
+  lines.push(`Translation: ${entry.answers.translation || '(blank)'}`);
+  lines.push(`Translation self-check: ${entry.assessment.translation}`);
+  lines.push('');
+  lines.push(`Streak: ${computeStreak(lang)} days`);
+  return lines.join('\n');
+}
+function copyCheckin(lang, dateKey, sentence, entry){
+  navigator.clipboard.writeText(buildCheckinText(lang, dateKey, sentence, entry)).then(() => {
+    showToast('Check-in copied to clipboard');
+  }).catch(() => showToast('Could not copy — select and copy manually'));
+}
+
+function backToTodayRow(dateKey){
+  if(dateKey === todayKey()) return '';
+  return `<div class="back-row"><button class="ghost small" id="backToTodayBtn">← Back to today</button></div>
+          <div class="viewing-date">Viewing ${escapeHtml(dateKey)}</div>`;
+}
+function attachBackHandler(){
+  const btn = document.getElementById('backToTodayBtn');
+  if(btn){
+    btn.addEventListener('click', () => {
+      viewingDateKey = todayKey();
+      renderCardForDate(viewingDateKey);
+    });
+  }
+}
+
+function renderCompletedState(card, dateKey, sentence, entry){
+  const { initial, rest } = dropInitial(sentence.latin);
+  const overall = entry.status;
+  const cls = overall === 'good' ? '' : (overall === 'mixed' ? 'mixed' : 'rough');
+  const headText = overall === 'good' ? 'Recte scriptum — well done' :
+                    overall === 'mixed' ? 'Fere recte — mixed results' :
+                    'Revidendum — worth another pass';
+
+  let itemsHtml = '';
+  (sentence.focus || []).forEach((f, i) => {
+    const good = entry.assessment.focus[i] === 'good';
+    itemsHtml += `<div class="item-fb"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;margin-right:6px;color:${good?'var(--sage)':'var(--rubric)'}">${good?'✓':'✗'}</span><span style="font-family:var(--display-font);font-style:italic;font-weight:600">${escapeHtml(f.word)}</span> — you: ${escapeHtml(entry.answers.focus[i] || '(blank)')}</div>`;
+    itemsHtml += paradigmHtml(f.paradigm, f.hit);
+  });
+
+  card.innerHTML = `
+    ${backToTodayRow(dateKey)}
+    <div class="attribution">${escapeHtml(sentence.author)} <span class="work">— ${escapeHtml(sentence.work)}</span></div>
+    <div class="sentence-block">
+      <div class="drop-cap">${escapeHtml(initial)}</div>
+      <div class="latin-text">${escapeHtml(rest)}</div>
+    </div>
+    <div class="word-count">completed</div>
+    <div class="marginalia ${cls}">
+      <div class="marginalia-head">${headText}</div>
+      ${itemsHtml}
+      <div class="translation-ref">
+        <div class="your-answer">Your translation: ${escapeHtml(entry.answers.translation || '(blank)')}</div>
+        <div class="ref-text">${escapeHtml(sentence.ref)}</div>
+      </div>
+    </div>
+    <div class="copy-row">
+      <button class="ghost small" id="copyBtn">Copy check-in</button>
+    </div>
+  `;
+  attachBackHandler();
+  document.getElementById('copyBtn').addEventListener('click', () => copyCheckin(currentLang, dateKey, sentence, entry));
+}
+
+function renderSkippedState(card, dateKey, sentence){
+  const { initial, rest } = dropInitial(sentence.latin);
+  card.innerHTML = `
+    ${backToTodayRow(dateKey)}
+    <div class="attribution">${escapeHtml(sentence.author)} <span class="work">— ${escapeHtml(sentence.work)}</span></div>
+    <div class="sentence-block">
+      <div class="drop-cap">${escapeHtml(initial)}</div>
+      <div class="latin-text">${escapeHtml(rest)}</div>
+    </div>
+    <div class="word-count">skipped</div>
+    <div class="reference-toggle" id="refToggle">Show reference translation</div>
+    <div class="reference-box" id="refBox">${escapeHtml(sentence.ref)}</div>
+  `;
+  attachBackHandler();
+  document.getElementById('refToggle').addEventListener('click', () => {
+    document.getElementById('refBox').classList.toggle('show');
+  });
+}
+
+function renderForm(card, dateKey, sentence){
+  const { initial, rest } = dropInitial(sentence.latin);
+  const isToday = dateKey === todayKey();
+
+  let focusRows = '';
+  sentence.focus.forEach((f, i) => {
+    focusRows += `
+      <div class="focus-row">
+        <div class="focus-word">${escapeHtml(f.word)}</div>
+        <input type="text" class="focus-input" data-idx="${i}" placeholder="case/tense, mood, person…" />
+      </div>
+    `;
+  });
+
+  card.innerHTML = `
+    ${backToTodayRow(dateKey)}
+    <div class="attribution">${escapeHtml(sentence.author)} <span class="work">— ${escapeHtml(sentence.work)}</span></div>
+    <div class="sentence-block">
+      <div class="drop-cap">${escapeHtml(initial)}</div>
+      <div class="latin-text">${escapeHtml(rest)}</div>
+    </div>
+    <div class="word-count">${sentence.latin.split(/\s+/).length} words${isToday ? '' : ' · not yet done'}</div>
+
+    <div class="section-label">Parse</div>
+    ${focusRows}
+
+    <div class="section-label">Translatio</div>
+    <textarea id="translationInput" placeholder="Your English translation…"></textarea>
+
+    <div class="submit-row">
+      <button id="revealBtn">Reveal & self-check</button>
+      <button id="skipBtn" class="ghost">${isToday ? 'Skip today' : 'Mark as skipped'}</button>
+    </div>
+    <div id="revealHost"></div>
+  `;
+  attachBackHandler();
+
+  document.getElementById('revealBtn').addEventListener('click', () => {
+    const inputs = Array.from(document.querySelectorAll('.focus-input'));
+    const focusAnswers = inputs.map(inp => inp.value.trim());
+    const translation = document.getElementById('translationInput').value.trim();
+    renderReveal(dateKey, sentence, focusAnswers, translation);
+  });
+
+  document.getElementById('skipBtn').addEventListener('click', () => {
+    historyStore[currentLang][dateKey] = { status: 'skipped', submittedAt: new Date().toISOString() };
+    saveHistory(currentLang);
+    renderStreak();
+    renderSkippedState(card, dateKey, sentence);
+  });
+}
+
+function renderReveal(dateKey, sentence, focusAnswers, translation){
+  const host = document.getElementById('revealHost');
+  const assessment = { focus: new Array(sentence.focus.length).fill(null), translation: null };
+
+  let itemsHtml = '';
+  sentence.focus.forEach((f, i) => {
+    itemsHtml += `
+      <div class="reveal-item">
+        <div class="w">${escapeHtml(f.word)}</div>
+        <div class="your-answer">You wrote: ${escapeHtml(focusAnswers[i] || '(blank)')}</div>
+        <div class="parse-ref">${escapeHtml(f.parse)}</div>
+        ${paradigmHtml(f.paradigm, f.hit)}
+        <div class="self-check" data-idx="${i}">
+          <button type="button" data-val="good">Got it</button>
+          <button type="button" data-val="bad">Missed it</button>
+        </div>
+      </div>
+    `;
+  });
+
+  host.innerHTML = `
+    <div class="reveal-box">
+      <div class="reveal-head">Reference</div>
+      ${itemsHtml}
+      <div class="translation-ref">
+        <div class="your-answer">You wrote: ${escapeHtml(translation || '(blank)')}</div>
+        <div class="ref-text">${escapeHtml(sentence.ref)}</div>
+        <div class="self-check" data-idx="translation">
+          <button type="button" data-val="good">Got it</button>
+          <button type="button" data-val="bad">Missed it</button>
+        </div>
+      </div>
+      <div class="finish-row">
+        <button id="finishBtn" disabled>Log this check-in</button>
+      </div>
+    </div>
+  `;
+
+  host.querySelectorAll('.self-check').forEach(row => {
+    row.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        row.querySelectorAll('button').forEach(b => b.classList.remove('chosen-good','chosen-bad'));
+        btn.classList.add(btn.dataset.val === 'good' ? 'chosen-good' : 'chosen-bad');
+        const idx = row.dataset.idx;
+        if(idx === 'translation'){ assessment.translation = btn.dataset.val; }
+        else { assessment.focus[parseInt(idx,10)] = btn.dataset.val; }
+        const allFocusDone = assessment.focus.every(v => v !== null);
+        document.getElementById('finishBtn').disabled = !(allFocusDone && assessment.translation !== null);
+      });
+    });
+  });
+
+  document.getElementById('finishBtn').addEventListener('click', () => {
+    const goodCount = assessment.focus.filter(v => v === 'good').length + (assessment.translation === 'good' ? 1 : 0);
+    const total = assessment.focus.length + 1;
+    let status;
+    if(goodCount === total) status = 'good';
+    else if(goodCount === 0) status = 'rough';
+    else status = 'mixed';
+
+    const entry = {
+      status,
+      answers: { focus: focusAnswers, translation },
+      assessment,
+      submittedAt: new Date().toISOString()
+    };
+    historyStore[currentLang][dateKey] = entry;
+    saveHistory(currentLang);
+    mirrorCompletion(currentLang, dateKey);
+    renderStreak();
+    renderCompletedState(document.getElementById('card'), dateKey, sentence, entry);
+  });
+}
+
+function renderCardForDate(dateKey){
+  const card = document.getElementById('card');
+  const sentence = sentenceForDate(currentLang, parseDateKey(dateKey));
+  const entry = historyStore[currentLang][dateKey];
+  if(entry && entry.status === 'skipped'){
+    renderSkippedState(card, dateKey, sentence);
+  } else if(entry && entry.answers){
+    renderCompletedState(card, dateKey, sentence, entry);
+  } else {
+    renderForm(card, dateKey, sentence);
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ---------- History panel ---------- */
+function statusLabel(entry){
+  if(!entry) return 'missed';
+  if(entry.status === 'skipped') return 'skipped';
+  if(entry.status === 'good') return 'done';
+  if(entry.status === 'mixed') return 'mixed';
+  if(entry.status === 'rough') return 'rough';
+  return 'missed';
+}
+function statusDotClass(entry){
+  if(!entry) return '';
+  if(entry.status === 'skipped') return 'skipped';
+  if(entry.status === 'good') return 'good';
+  if(entry.status === 'mixed') return 'mixed';
+  if(entry.status === 'rough') return 'rough';
+  return '';
+}
+
+function openHistory(){
+  const firstUse = ensureFirstUse(currentLang);
+  const start = parseDateKey(firstUse);
+  const end = new Date();
+  const rows = [];
+  let cursor = new Date(end);
+  while(cursor >= start){
+    const key = dateKeyOf(cursor);
+    const sentence = sentenceForDate(currentLang, cursor);
+    const entry = historyStore[currentLang][key];
+    rows.push({ key, sentence, entry });
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  document.getElementById('historyTitle').textContent = `Past days — ${LANGS[currentLang].label}`;
+  const list = document.getElementById('historyList');
+  list.innerHTML = rows.map(r => `
+    <div class="history-row" data-key="${r.key}">
+      <div class="history-dot ${statusDotClass(r.entry)}"></div>
+      <div class="history-date">${r.key}</div>
+      <div class="history-author">${escapeHtml(r.sentence.author)}</div>
+      <div class="history-status">${statusLabel(r.entry)}</div>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.history-row').forEach(row => {
+    row.addEventListener('click', () => {
+      viewingDateKey = row.dataset.key;
+      document.getElementById('historyOverlay').classList.remove('show');
+      renderCardForDate(viewingDateKey);
+    });
+  });
+
+  document.getElementById('historyOverlay').classList.add('show');
+}
+
+/* ---------- Language toggle ---------- */
+function applyLangUI(){
+  document.getElementById('btnLatin').classList.toggle('active', currentLang === 'latin');
+  document.getElementById('btnGreek').classList.toggle('active', currentLang === 'greek');
+  document.documentElement.style.setProperty('--display-font', LANGS[currentLang].displayFont);
+}
+function switchLang(lang){
+  if(lang === currentLang) return;
+  currentLang = lang;
+  localStorage.setItem(CURRENT_LANG_KEY, lang);
+  viewingDateKey = todayKey();
+  applyLangUI();
+  renderStreak();
+  renderCardForDate(viewingDateKey);
+}
+
+/* ---------- PWA: service worker + reminders ---------- */
+async function registerSW(){
+  if(!('serviceWorker' in navigator)) return null;
+  try{ return await navigator.serviceWorker.register('sw.js'); }
+  catch(e){ return null; }
+}
+
+async function enableReminders(){
+  const btn = document.getElementById('reminderBtn');
+  if(!('Notification' in window)){
+    showToast('Notifications not supported in this browser');
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  if(perm !== 'granted'){
+    showToast('Notification permission was not granted');
+    return;
+  }
+  const reg = await navigator.serviceWorker.ready;
+  let periodicOk = false;
+  if('periodicSync' in reg){
+    try{
+      const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
+      if(status.state === 'granted'){
+        await reg.periodicSync.register('lectio-reminder', { minInterval: 20 * 60 * 60 * 1000 });
+        periodicOk = true;
+      }
+    } catch(e){ /* not available */ }
+  }
+  localStorage.setItem(REMINDERS_KEY, 'on');
+  btn.textContent = 'Daily reminder on';
+  btn.disabled = true;
+  if(periodicOk){
+    showToast('Reminders enabled — covers both Latin and Greek');
+  } else {
+    showToast('Notifications on, but this browser cannot schedule daily background reminders — pair with a phone alarm');
+  }
+}
+
+function initReminderButton(){
+  const btn = document.getElementById('reminderBtn');
+  if(localStorage.getItem(REMINDERS_KEY) === 'on' && 'Notification' in window && Notification.permission === 'granted'){
+    btn.textContent = 'Daily reminder on';
+    btn.disabled = true;
+  }
+  btn.addEventListener('click', enableReminders);
+}
+
+function init(){
+  ensureFirstUse('latin');
+  ensureFirstUse('greek');
+  viewingDateKey = todayKey();
+  applyLangUI();
+  renderStreak();
+  renderCardForDate(viewingDateKey);
+
+  document.getElementById('btnLatin').addEventListener('click', () => switchLang('latin'));
+  document.getElementById('btnGreek').addEventListener('click', () => switchLang('greek'));
+
+  document.getElementById('historyBtn').addEventListener('click', openHistory);
+  document.getElementById('closeHistory').addEventListener('click', () => {
+    document.getElementById('historyOverlay').classList.remove('show');
+  });
+  document.getElementById('historyOverlay').addEventListener('click', (e) => {
+    if(e.target.id === 'historyOverlay') document.getElementById('historyOverlay').classList.remove('show');
+  });
+
+  registerSW();
+  initReminderButton();
+}
+
+init();
+</script>
+</body>
+</html>
