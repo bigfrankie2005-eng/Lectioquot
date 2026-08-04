@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#dcc99a">
+<title>Lectio Quotidiana</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --parchment: #e8dcb8;
+    --parchment-dark: #dcc99a;
+    --ink: #2b2119;
+    --ink-soft: #4a3f34;
+    --rubric: #9c2b26;
+    --rubric-soft: #b5453f;
+    --gold: #93701f;
+    --gold-bright: #b8912f;
+    --sage: #55603f;
+    --card-shadow: 0 1px 2px rgba(43,33,25,0.15), 0 12px 32px -12px rgba(43,33,25,0.35);
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; background: var(--parchment); color: var(--ink); font-family: 'EB Garamond', serif; min-height:100vh; }
+  body{ background-image: radial-gradient(ellipse at 20% 10%, rgba(255,255,255,0.10), transparent 55%), radial-gradient(ellipse at 85% 90%, rgba(0,0,0,0.06), transparent 50%); }
+  .grain{ position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0.05; mix-blend-mode: multiply; }
+  .wrap{ position: relative; z-index: 1; max-width: 640px; margin: 0 auto; padding: 28px 18px 64px; }
+  header.page-head{ display:flex; align-items:baseline; justify-content:space-between; border-bottom: 1px solid rgba(43,33,25,0.25); padding-bottom: 10px; margin-bottom: 22px; }
+  .brand{ font-family: 'Cormorant Garamond', serif; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-size: 15px; color: var(--ink-soft); }
+  .streak-tally{ display:flex; align-items:center; gap:8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--gold); }
+  .streak-marks{ letter-spacing: 1px; font-size: 13px; }
+  .streak-marks .tick{ color: var(--rubric); }
+  .card{ background: var(--parchment-dark); border: 1px solid rgba(43,33,25,0.18); border-radius: 3px; box-shadow: var(--card-shadow); padding: 30px 26px; position: relative; }
+  .card::before{ content:""; position:absolute; inset: 6px; border: 1px solid rgba(43,33,25,0.14); pointer-events:none; }
+  .attribution{ font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); margin-bottom: 18px; }
+  .attribution .work{ font-style: italic; text-transform: none; opacity: 0.85; }
+  .sentence-block{ display:flex; align-items:flex-start; gap: 4px; margin-bottom: 8px; }
+  .drop-cap{ font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 58px; line-height: 0.82; color: var(--rubric); border: 2px solid var(--gold); padding: 6px 12px 2px; background: rgba(184,145,47,0.08); box-shadow: inset 0 0 0 1px rgba(156,43,38,0.25); flex-shrink: 0; }
+  .latin-text{ font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 600; font-size: 27px; line-height: 1.35; padding-top: 8px; color: var(--ink); }
+  .word-count{ font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.08em; margin: 4px 0 24px; opacity: 0.7; }
+  .section-label{ font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold); margin: 22px 0 10px; display:flex; align-items:center; gap:8px; }
+  .section-label::after{ content:""; flex:1; height:1px; background: repeating-linear-gradient(90deg, rgba(147,112,31,0.4) 0 4px, transparent 4px 8px); }
+  .focus-row{ display:flex; align-items:center; gap: 12px; margin-bottom: 10px; }
+  .focus-word{ font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 600; font-size: 19px; min-width: 118px; color: var(--ink); }
+  .focus-input, textarea{ font-family: 'EB Garamond', serif; font-size: 16px; background: #f3ead0; border: 1px solid rgba(43,33,25,0.3); border-radius: 2px; padding: 8px 10px; color: var(--ink); width: 100%; }
+  .focus-input:focus, textarea:focus{ outline: none; border-color: var(--rubric-soft); box-shadow: 0 0 0 2px rgba(156,43,38,0.12); }
+  textarea{ min-height: 84px; resize: vertical; line-height: 1.5; }
+  .submit-row{ margin-top: 24px; display:flex; gap: 12px; align-items:center; flex-wrap: wrap; }
+  button{ font-family: 'JetBrains Mono', monospace; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer; border-radius: 2px; border: 1px solid var(--ink); padding: 11px 20px; background: var(--ink); color: var(--parchment); transition: transform 0.08s ease, background 0.15s ease; }
+  button:hover{ background: var(--ink-soft); }
+  button:active{ transform: translateY(1px); }
+  button:disabled{ opacity:0.5; cursor: default; }
+  button.ghost{ background: transparent; color: var(--ink-soft); border-color: rgba(43,33,25,0.35); }
+  button.ghost:hover{ background: rgba(43,33,25,0.06); }
+  button.small{ padding: 7px 12px; font-size: 11px; }
+  .status-line{ font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-soft); }
+  .reveal-box{ margin-top: 26px; padding: 16px 18px; border-left: 3px solid var(--gold); background: rgba(184,145,47,0.08); }
+  .reveal-head{ font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gold); margin-bottom: 12px; }
+  .reveal-item{ margin-bottom: 18px; }
+  .reveal-item .w{ font-style: italic; font-weight: 600; font-size: 17px; }
+  .reveal-item .parse-ref{ font-size: 14.5px; color: var(--ink-soft); margin: 3px 0 6px; }
+  .reveal-item .your-answer{ font-size: 13.5px; color: var(--ink-soft); font-family: 'JetBrains Mono', monospace; margin-bottom: 6px; }
+  .paradigm{ margin: 8px 0 10px; border: 1px solid rgba(43,33,25,0.2); background: rgba(243,234,208,0.6); }
+  .paradigm-title{ font-family: 'JetBrains Mono', monospace; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gold); padding: 6px 10px; border-bottom: 1px dashed rgba(43,33,25,0.2); }
+  .paradigm table{ width: 100%; border-collapse: collapse; }
+  .paradigm td{ padding: 4px 10px; font-size: 14.5px; }
+  .paradigm td.lbl{ font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft); width: 34%; text-transform: lowercase; }
+  .paradigm td.frm{ font-style: italic; }
+  .paradigm tr.hit td.frm{ color: var(--rubric); font-weight: 600; }
+  .paradigm-note{ font-size: 12.5px; color: var(--ink-soft); padding: 5px 10px 7px; font-style: italic; border-top: 1px dashed rgba(43,33,25,0.15); }
+  .self-check{ display:flex; gap: 8px; }
+  .self-check button{ padding: 6px 12px; font-size: 11px; background: transparent; color: var(--ink-soft); border-color: rgba(43,33,25,0.3); }
+  .self-check button.chosen-good{ background: var(--sage); color: var(--parchment); border-color: var(--sage); }
+  .self-check button.chosen-bad{ background: var(--rubric); color: var(--parchment); border-color: var(--rubric); }
+  .translation-ref{ margin-top: 16px; padding-top: 14px; border-top: 1px dashed rgba(43,33,25,0.25); }
+  .translation-ref .ref-text{ font-style: italic; font-size: 16px; margin: 6px 0 10px; }
+  .translation-ref .your-answer{ font-size: 14px; color: var(--ink-soft); margin-bottom: 10px; }
+  .finish-row{ margin-top: 20px; }
+  .marginalia{ margin-top: 22px; padding: 16px 18px; border-left: 3px solid var(--sage); background: rgba(85,96,63,0.08); }
+  .marginalia.mixed{ border-left-color: var(--gold); background: rgba(184,145,47,0.08); }
+  .marginalia.rough{ border-left-color: var(--rubric); background: rgba(156,43,38,0.06); }
+  .marginalia-head{ font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sage); margin-bottom: 8px; }
+  .marginalia.mixed .marginalia-head{ color: var(--gold); }
+  .marginalia.rough .marginalia-head{ color: var(--rubric); }
+  .item-fb{ margin-bottom: 8px; font-size: 15px; line-height: 1.45; }
+  .reference-toggle{ margin-top: 16px; font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gold); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .reference-box{ margin-top: 10px; font-size: 15px; font-style: italic; color: var(--ink-soft); display:none; }
+  .reference-box.show{ display:block; }
+  .copy-row{ margin-top: 18px; display:flex; gap:10px; flex-wrap:wrap; }
+  .settings-strip{ margin-top: 18px; display:flex; gap:10px; align-items:center; flex-wrap: wrap; }
+  .footer-note{ text-align:center; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--ink-soft); opacity: 0.6; margin-top: 28px; letter-spacing: 0.05em; }
+  .toast{ position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--parchment); font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 10px 18px; border-radius: 2px; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; z-index: 10; max-width: 90vw; text-align:center; }
+  .toast.show{ opacity: 1; }
+  @media (max-width: 480px){
+    .drop-cap{ font-size: 44px; padding: 4px 8px 0; }
+    .latin-text{ font-size: 22px; }
+    .focus-row{ flex-direction: column; align-items: flex-start; gap: 6px; }
+    .focus-word{ min-width: unset; }
+  }
+  @media (prefers-reduced-motion: reduce){ *{ transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<svg class="grain" xmlns="http://www.w3.org/2000/svg">
+  <filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/></filter>
+  <rect width="100%" height="100%" filter="url(#noise)"/>
+</svg>
+
+<div class="wrap">
+  <header class="page-head">
+    <div class="brand">Lectio Quotidiana</div>
+    <div class="streak-tally">
+      <span id="streakMarks" class="streak-marks"></span>
+      <span id="streakNum">0</span>
+    </div>
+  </header>
+
+  <div class="card" id="card">
+    <div class="status-line">Loading today's lectio…</div>
+  </div>
+
+  <div class="settings-strip">
+    <button class="ghost small" id="reminderBtn">Enable daily reminder</button>
+  </div>
+
+  <div class="footer-note">a sentence a day, from the fathers and doctors of the church</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   PARADIGMS — full conjugation (that tense & voice) for verbs,
+   full declension for nouns/adjectives, keyed for reuse.
+   "hit" marks the row matching the form in the sentence.
+   ============================================================ */
+const P = {
+  sum_pres:   { title:"sum, esse — present active indicative", rows:[["1 sg","sum"],["2 sg","es"],["3 sg","est"],["1 pl","sumus"],["2 pl","estis"],["3 pl","sunt"]] },
+  sum_impf:   { title:"sum, esse — imperfect active indicative", rows:[["1 sg","eram"],["2 sg","erās"],["3 sg","erat"],["1 pl","erāmus"],["2 pl","erātis"],["3 pl","erant"]] },
+  facio_perf: { title:"faciō, facere — perfect active indicative", rows:[["1 sg","fēcī"],["2 sg","fēcistī"],["3 sg","fēcit"],["1 pl","fēcimus"],["2 pl","fēcistis"],["3 pl","fēcērunt"]] },
+  facio_impv: { title:"faciō, facere — present active imperative", rows:[["2 sg","fac"],["2 pl","facite"]], note:"fac is one of the four irregular short imperatives: dīc, dūc, fac, fer." },
+  requiesco_subj: { title:"requiēscō, requiēscere — present active subjunctive", rows:[["1 sg","requiēscam"],["2 sg","requiēscās"],["3 sg","requiēscat"],["1 pl","requiēscāmus"],["2 pl","requiēscātis"],["3 pl","requiēscant"]] },
+  amo_perf:   { title:"amō, amāre — perfect active indicative", rows:[["1 sg","amāvī"],["2 sg","amāvistī"],["3 sg","amāvit"],["1 pl","amāvimus"],["2 pl","amāvistis"],["3 pl","amāvērunt"]] },
+  pulchritudo_decl: { title:"pulchritūdō, -inis f. — 3rd declension", rows:[["nom sg","pulchritūdō"],["gen sg","pulchritūdinis"],["dat sg","pulchritūdinī"],["acc sg","pulchritūdinem"],["abl sg","pulchritūdine"],["voc sg","pulchritūdō"]], note:"Here vocative — Augustine is addressing Beauty directly." },
+  verbum_decl:{ title:"verbum, -ī n. — 2nd declension neuter", rows:[["nom sg","verbum"],["gen sg","verbī"],["dat sg","verbō"],["acc sg","verbum"],["abl sg","verbō"],["nom/acc pl","verba"],["gen pl","verbōrum"],["dat/abl pl","verbīs"]] },
+  creo_perf:  { title:"creō, creāre — perfect active indicative", rows:[["1 sg","creāvī"],["2 sg","creāvistī"],["3 sg","creāvit"],["1 pl","creāvimus"],["2 pl","creāvistis"],["3 pl","creāvērunt"]] },
+  caelum_decl:{ title:"caelum, -ī n. — 2nd declension neuter", rows:[["nom sg","caelum"],["gen sg","caelī"],["dat sg","caelō"],["acc sg","caelum"],["abl sg","caelō"]], note:"Heteroclite: the plural is masculine — caelī, caelōrum, caelīs, caelōs, caelīs." },
+  devenio_inf:{ title:"dēveniō, dēvenīre — present active indicative", rows:[["1 sg","dēveniō"],["2 sg","dēvenīs"],["3 sg","dēvenit"],["1 pl","dēvenīmus"],["2 pl","dēvenītis"],["3 pl","dēveniunt"]], note:"In the sentence: dēvenīre, the present active infinitive." },
+  moveo_pass: { title:"moveō, movēre — present passive indicative", rows:[["1 sg","moveor"],["2 sg","movēris"],["3 sg","movētur"],["1 pl","movēmur"],["2 pl","movēminī"],["3 pl","moventur"]] },
+  venio_impv: { title:"veniō, venīre — present active imperative", rows:[["2 sg","venī"],["2 pl","venīte"]] },
+  ostendo_impv:{ title:"ostendō, ostendere — present active imperative", rows:[["2 sg","ostende"],["2 pl","ostendite"]] },
+  dilectio_decl:{ title:"dīlēctiō, -ōnis f. — 3rd declension", rows:[["nom sg","dīlēctiō"],["gen sg","dīlēctiōnis"],["dat sg","dīlēctiōnī"],["acc sg","dīlēctiōnem"],["abl sg","dīlēctiōne"],["nom/acc pl","dīlēctiōnēs"],["gen pl","dīlēctiōnum"],["dat/abl pl","dīlēctiōnibus"]] },
+  efficio_pass:{ title:"efficiō, efficere — present passive indicative", rows:[["1 sg","efficior"],["2 sg","efficeris"],["3 sg","efficitur"],["1 pl","efficimur"],["2 pl","efficiminī"],["3 pl","efficiuntur"]] },
+  metior_dep: { title:"metior, metīrī — present indicative (deponent)", rows:[["1 sg","metior"],["2 sg","metīris"],["3 sg","metītur"],["1 pl","metīmur"],["2 pl","metīminī"],["3 pl","metiuntur"]], note:"Deponent: passive in form, but Tertullian uses it here with true passive sense (\"we are mown down\") — a patristic liberty worth noticing." },
+  beatus_decl:{ title:"beātus, -a, -um — masculine declension", rows:[["nom sg","beātus"],["gen sg","beātī"],["dat sg","beātō"],["acc sg","beātum"],["abl sg","beātō"],["nom pl","beātī"],["gen pl","beātōrum"],["dat/abl pl","beātīs"],["acc pl","beātōs"]] },
+  amor_decl:  { title:"amor, amōris m. — 3rd declension", rows:[["nom sg","amor"],["gen sg","amōris"],["dat sg","amōrī"],["acc sg","amōrem"],["abl sg","amōre"],["nom/acc pl","amōrēs"],["gen pl","amōrum"],["dat/abl pl","amōribus"]] },
+  ignoratio_decl:{ title:"ignōrātiō, -ōnis f. — 3rd declension", rows:[["nom sg","ignōrātiō"],["gen sg","ignōrātiōnis"],["dat sg","ignōrātiōnī"],["acc sg","ignōrātiōnem"],["abl sg","ignōrātiōne"]] },
+  rego_pres:  { title:"regō, regere — present active indicative", rows:[["1 sg","regō"],["2 sg","regis"],["3 sg","regit"],["1 pl","regimus"],["2 pl","regitis"],["3 pl","regunt"]] },
+  desum_fut:  { title:"dēsum, dēesse — future active indicative", rows:[["1 sg","dēerō"],["2 sg","dēeris"],["3 sg","dēerit"],["1 pl","dēerimus"],["2 pl","dēeritis"],["3 pl","dēerunt"]] },
+  tollo_pres: { title:"tollō, tollere — present active indicative", rows:[["1 sg","tollō"],["2 sg","tollis"],["3 sg","tollit"],["1 pl","tollimus"],["2 pl","tollitis"],["3 pl","tollunt"]] },
+  perficio_pres:{ title:"perficiō, perficere — present active indicative", rows:[["1 sg","perficiō"],["2 sg","perficis"],["3 sg","perficit"],["1 pl","perficimus"],["2 pl","perficitis"],["3 pl","perficiunt"]] },
+  christus_decl:{ title:"Chrīstus, -ī m. — 2nd declension", rows:[["nom sg","Chrīstus"],["gen sg","Chrīstī"],["dat sg","Chrīstō"],["acc sg","Chrīstum"],["abl sg","Chrīstō"],["voc sg","Chrīste"]] },
+  laudabilis_decl:{ title:"laudābilis, -e — 3rd declension adjective (m/f)", rows:[["nom sg","laudābilis"],["gen sg","laudābilis"],["dat sg","laudābilī"],["acc sg","laudābilem"],["abl sg","laudābilī"],["nom/acc pl","laudābilēs"],["gen pl","laudābilium"],["dat/abl pl","laudābilibus"]], note:"Neuter sg: laudābile; neuter pl: laudābilia." },
+  roro_impv:  { title:"rōrō, rōrāre — present active imperative", rows:[["2 sg","rōrā"],["2 pl","rōrāte"]] },
+  pluo_subj:  { title:"pluō, pluere — present active subjunctive", rows:[["1 sg","pluam"],["2 sg","pluās"],["3 sg","pluat"],["1 pl","pluāmus"],["2 pl","pluātis"],["3 pl","pluant"]], note:"Jussive subjunctive: \"let the clouds rain.\"" },
+  diligo_impv:{ title:"dīligō, dīligere — present active imperative", rows:[["2 sg","dīlige"],["2 pl","dīligite"]] },
+  maneo_pres: { title:"maneō, manēre — present active indicative", rows:[["1 sg","maneō"],["2 sg","manēs"],["3 sg","manet"],["1 pl","manēmus"],["2 pl","manētis"],["3 pl","manent"]] },
+  maior_decl: { title:"maior, maius — comparative declension (m/f)", rows:[["nom sg","maior"],["gen sg","maiōris"],["dat sg","maiōrī"],["acc sg","maiōrem"],["abl sg","maiōre"],["nom/acc pl","maiōrēs"],["gen pl","maiōrum"],["dat/abl pl","maiōribus"]], note:"Neuter sg nom/acc: maius; neuter pl: maiōra." }
+};
+
+const SENTENCES = [
+  { id:1, author:"Augustine", work:"Confessiones", latin:"Fecisti nos ad te, et inquietum est cor nostrum donec requiescat in te.",
+    focus:[
+      { word:"Fecisti", parse:"perfect active indicative, 2nd sg. — facio, facere (\"you have made\")", paradigm:"facio_perf", hit:"2 sg" },
+      { word:"requiescat", parse:"present active subjunctive, 3rd sg. — requiesco, requiescere (\"that it may rest\")", paradigm:"requiesco_subj", hit:"3 sg" }
+    ], ref:"You made us for yourself, and our heart is restless until it rests in you." },
+  { id:2, author:"Augustine", work:"Confessiones", latin:"Sero te amavi, pulchritudo tam antiqua et tam nova, sero te amavi.",
+    focus:[
+      { word:"amavi", parse:"perfect active indicative, 1st sg. — amo, amare (\"I have loved\")", paradigm:"amo_perf", hit:"1 sg" },
+      { word:"pulchritudo", parse:"vocative singular feminine — \"beauty\" (direct address)", paradigm:"pulchritudo_decl", hit:"voc sg" }
+    ], ref:"Late have I loved you, beauty so ancient and so new, late have I loved you." },
+  { id:3, author:"Jerome (Vulgate)", work:"Evangelium secundum Ioannem 1:1", latin:"In principio erat Verbum, et Verbum erat apud Deum, et Deus erat Verbum.",
+    focus:[
+      { word:"erat", parse:"imperfect active indicative, 3rd sg. — sum, esse (\"was\")", paradigm:"sum_impf", hit:"3 sg" },
+      { word:"Verbum", parse:"nominative singular neuter — \"the Word\" (subject / predicate nominative)", paradigm:"verbum_decl", hit:"nom sg" }
+    ], ref:"In the beginning was the Word, and the Word was with God, and the Word was God." },
+  { id:4, author:"Jerome (Vulgate)", work:"Genesis 1:1", latin:"In principio creavit Deus caelum et terram.",
+    focus:[
+      { word:"creavit", parse:"perfect active indicative, 3rd sg. — creo, creare (\"created\")", paradigm:"creo_perf", hit:"3 sg" },
+      { word:"caelum", parse:"accusative singular neuter — direct object, \"heaven\"", paradigm:"caelum_decl", hit:"acc sg" }
+    ], ref:"In the beginning God created heaven and earth." },
+  { id:5, author:"Thomas Aquinas", work:"Summa Theologiae I, q.2, a.3", latin:"Ergo necesse est devenire ad aliquod primum movens, quod a nullo movetur.",
+    focus:[
+      { word:"devenire", parse:"present active infinitive — devenio, devenire (\"to arrive at\")", paradigm:"devenio_inf", hit:null },
+      { word:"movetur", parse:"present passive indicative, 3rd sg. — moveo, movere (\"is moved\")", paradigm:"moveo_pass", hit:"3 sg" }
+    ], ref:"Therefore it is necessary to arrive at some first mover, which is moved by nothing." },
+  { id:6, author:"Ambrose (attrib.)", work:"Veni Redemptor Gentium", latin:"Veni redemptor gentium, ostende partum virginis.",
+    focus:[
+      { word:"Veni", parse:"present active imperative, 2nd sg. — venio, venire (\"come!\")", paradigm:"venio_impv", hit:"2 sg" },
+      { word:"ostende", parse:"present active imperative, 2nd sg. — ostendo, ostendere (\"show!\")", paradigm:"ostendo_impv", hit:"2 sg" }
+    ], ref:"Come, redeemer of the nations, show forth the virgin's childbearing." },
+  { id:7, author:"Gregory the Great", work:"Homiliae in Evangelia", latin:"Ipsa dilectio notitia est.",
+    focus:[
+      { word:"dilectio", parse:"nominative singular feminine — subject, \"love\"", paradigm:"dilectio_decl", hit:"nom sg" },
+      { word:"est", parse:"present active indicative, 3rd sg. — sum, esse (\"is\")", paradigm:"sum_pres", hit:"3 sg" }
+    ], ref:"Love itself is a kind of knowledge." },
+  { id:8, author:"Tertullian", work:"Apologeticum", latin:"Plures efficimur, quotiens metimur a vobis: semen est sanguis Christianorum.",
+    focus:[
+      { word:"efficimur", parse:"present passive indicative, 1st pl. — efficio, efficere (\"we are made/become\")", paradigm:"efficio_pass", hit:"1 pl" },
+      { word:"metimur", parse:"present indicative, 1st pl., deponent — metior, metiri (\"we are mown down\")", paradigm:"metior_dep", hit:"1 pl" }
+    ], ref:"The more we are mown down by you, the more we grow; the blood of Christians is seed." },
+  { id:9, author:"Jerome (Vulgate)", work:"Evangelium secundum Matthaeum 5:3", latin:"Beati pauperes spiritu, quoniam ipsorum est regnum caelorum.",
+    focus:[
+      { word:"Beati", parse:"nominative masculine plural — beatus, -a, -um, predicate adjective, \"blessed\"", paradigm:"beatus_decl", hit:"nom pl" },
+      { word:"est", parse:"present active indicative, 3rd sg. — sum, esse (\"is\")", paradigm:"sum_pres", hit:"3 sg" }
+    ], ref:"Blessed are the poor in spirit, for theirs is the kingdom of heaven." },
+  { id:10, author:"Augustine", work:"De Civitate Dei", latin:"Duas civitates fecerunt amores duo.",
+    focus:[
+      { word:"fecerunt", parse:"perfect active indicative, 3rd pl. — facio, facere (\"made\")", paradigm:"facio_perf", hit:"3 pl" },
+      { word:"amores", parse:"nominative masculine plural — subject, \"loves\"", paradigm:"amor_decl", hit:"nom/acc pl" }
+    ], ref:"Two loves made two cities." },
+  { id:11, author:"Jerome", work:"Commentarii in Isaiam, prol.", latin:"Ignoratio enim Scripturarum ignoratio Christi est.",
+    focus:[
+      { word:"Ignoratio", parse:"nominative singular feminine — subject, \"ignorance\"", paradigm:"ignoratio_decl", hit:"nom sg" },
+      { word:"est", parse:"present active indicative, 3rd sg. — sum, esse (\"is\")", paradigm:"sum_pres", hit:"3 sg" }
+    ], ref:"For ignorance of the Scriptures is ignorance of Christ." },
+  { id:12, author:"Jerome (Vulgate)", work:"Psalmus 22:1", latin:"Dominus regit me, et nihil mihi deerit.",
+    focus:[
+      { word:"regit", parse:"present active indicative, 3rd sg. — rego, regere (\"rules, guides\")", paradigm:"rego_pres", hit:"3 sg" },
+      { word:"deerit", parse:"future active indicative, 3rd sg. — desum, deesse (\"will be lacking\")", paradigm:"desum_fut", hit:"3 sg" }
+    ], ref:"The Lord rules me, and I shall want nothing." },
+  { id:13, author:"Thomas Aquinas", work:"Summa Theologiae I, q.1, a.8 (traditional paraphrase)", latin:"Gratia non tollit naturam, sed perficit.",
+    focus:[
+      { word:"tollit", parse:"present active indicative, 3rd sg. — tollo, tollere (\"takes away, destroys\")", paradigm:"tollo_pres", hit:"3 sg" },
+      { word:"perficit", parse:"present active indicative, 3rd sg. — perficio, perficere (\"perfects, completes\")", paradigm:"perficio_pres", hit:"3 sg" }
+    ], ref:"Grace does not destroy nature, but perfects it." },
+  { id:14, author:"Ambrose", work:"De Virginitate", latin:"Omnia Christus est nobis.",
+    focus:[
+      { word:"est", parse:"present active indicative, 3rd sg. — sum, esse (\"is\")", paradigm:"sum_pres", hit:"3 sg" },
+      { word:"Christus", parse:"nominative singular masculine — subject, \"Christ\"", paradigm:"christus_decl", hit:"nom sg" }
+    ], ref:"Christ is all things to us." },
+  { id:15, author:"Augustine", work:"Confessiones", latin:"Magnus es, Domine, et laudabilis valde.",
+    focus:[
+      { word:"es", parse:"present active indicative, 2nd sg. — sum, esse (\"you are\")", paradigm:"sum_pres", hit:"2 sg" },
+      { word:"laudabilis", parse:"nominative singular masculine — predicate adjective, \"praiseworthy\"", paradigm:"laudabilis_decl", hit:"nom sg" }
+    ], ref:"Great are you, Lord, and greatly to be praised." },
+  { id:16, author:"Jerome (Vulgate)", work:"Isaias 45:8", latin:"Rorate caeli desuper, et nubes pluant iustum.",
+    focus:[
+      { word:"Rorate", parse:"present active imperative, 2nd pl. — roro, rorare (\"drop down dew!\")", paradigm:"roro_impv", hit:"2 pl" },
+      { word:"pluant", parse:"present active subjunctive, 3rd pl. (jussive) — pluo, pluere (\"let them rain\")", paradigm:"pluo_subj", hit:"3 pl" }
+    ], ref:"Drop down dew, you heavens, and let the clouds rain the just one." },
+  { id:17, author:"Augustine", work:"In Epistolam Ioannis ad Parthos, Tract. 7", latin:"Dilige, et quod vis fac.",
+    focus:[
+      { word:"Dilige", parse:"present active imperative, 2nd sg. — diligo, diligere (\"love!\")", paradigm:"diligo_impv", hit:"2 sg" },
+      { word:"fac", parse:"present active imperative, 2nd sg. — facio, facere (\"do!\")", paradigm:"facio_impv", hit:"2 sg" }
+    ], ref:"Love, and do what you will." },
+  { id:18, author:"Jerome (Vulgate)", work:"I ad Corinthios 13:13", latin:"Nunc autem manent fides, spes, caritas, tria haec: maior autem his est caritas.",
+    focus:[
+      { word:"manent", parse:"present active indicative, 3rd pl. — maneo, manere (\"remain, abide\")", paradigm:"maneo_pres", hit:"3 pl" },
+      { word:"maior", parse:"nominative singular feminine, comparative of magnus — predicate adjective, \"greater\"", paradigm:"maior_decl", hit:"nom sg" }
+    ], ref:"And now abide faith, hope, charity, these three: but the greatest of these is charity." }
+];
+
+const DAY_MS = 86400000;
+const EPOCH = new Date("2026-01-01T00:00:00Z").getTime();
+const STORAGE_KEY = "lectio_quotidiana_history";
+
+function todayKey(){
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+function dayIndex(){
+  const now = new Date();
+  const utcMidnight = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.floor((utcMidnight - EPOCH) / DAY_MS);
+}
+function sentenceForToday(){
+  const idx = ((dayIndex() % SENTENCES.length) + SENTENCES.length) % SENTENCES.length;
+  return SENTENCES[idx];
+}
+function dropInitial(latin){ return { initial: latin.charAt(0), rest: latin.slice(1) }; }
+function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function loadHistory(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch(e){ return {}; }
+}
+function saveHistory(h){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(h)); }
+  catch(e){ console.error("Could not save", e); }
+}
+let history = loadHistory();
+
+/* mirror completion date into IndexedDB so the service worker can suppress
+   reminder notifications on days you've already finished */
+function mirrorCompletion(dateKey){
+  try{
+    const open = indexedDB.open("lectio-sw", 1);
+    open.onupgradeneeded = () => open.result.createObjectStore("kv");
+    open.onsuccess = () => {
+      const db = open.result;
+      const tx = db.transaction("kv", "readwrite");
+      tx.objectStore("kv").put(dateKey, "lastCompleted");
+    };
+  } catch(e){ /* non-fatal */ }
+}
+
+function computeStreak(){
+  let streak = 0;
+  let cursor = new Date();
+  const tKey = todayKey();
+  if(!history[tKey] || history[tKey].status === 'skipped'){
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  while(true){
+    const key = cursor.getFullYear() + "-" + String(cursor.getMonth()+1).padStart(2,"0") + "-" + String(cursor.getDate()).padStart(2,"0");
+    const entry = history[key];
+    if(entry && (entry.status === 'good' || entry.status === 'mixed')){
+      streak++;
+      cursor.setDate(cursor.getDate() - 1);
+    } else { break; }
+  }
+  return streak;
+}
+function renderStreak(){
+  const streak = computeStreak();
+  document.getElementById('streakNum').textContent = streak + (streak === 1 ? ' day' : ' days');
+  const ticks = Math.min(streak, 10);
+  let marks = '';
+  for(let i=0;i<ticks;i++){ marks += '<span class="tick">I</span>'; if((i+1)%5===0) marks += ' '; }
+  document.getElementById('streakMarks').innerHTML = marks;
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function paradigmHtml(key, hit){
+  const p = P[key];
+  if(!p) return '';
+  let rows = '';
+  p.rows.forEach(([lbl, frm]) => {
+    const isHit = hit && lbl === hit;
+    rows += `<tr class="${isHit ? 'hit' : ''}"><td class="lbl">${escapeHtml(lbl)}</td><td class="frm">${escapeHtml(frm)}</td></tr>`;
+  });
+  const note = p.note ? `<div class="paradigm-note">${escapeHtml(p.note)}</div>` : '';
+  return `<div class="paradigm"><div class="paradigm-title">${escapeHtml(p.title)}</div><table>${rows}</table>${note}</div>`;
+}
+
+function buildCheckinText(sentence, entry){
+  const lines = [];
+  lines.push(`Lectio Quotidiana — ${todayKey()}`);
+  lines.push(`${sentence.author}, ${sentence.work}`);
+  lines.push(sentence.latin);
+  lines.push('');
+  (entry.answers.focus || []).forEach((a, i) => {
+    lines.push(`${sentence.focus[i].word}: ${a || '(blank)'} — self-check: ${entry.assessment.focus[i]}`);
+  });
+  lines.push(`Translation: ${entry.answers.translation || '(blank)'}`);
+  lines.push(`Translation self-check: ${entry.assessment.translation}`);
+  lines.push('');
+  lines.push(`Streak: ${computeStreak()} days`);
+  return lines.join('\n');
+}
+function copyCheckin(sentence, entry){
+  navigator.clipboard.writeText(buildCheckinText(sentence, entry)).then(() => {
+    showToast('Check-in copied to clipboard');
+  }).catch(() => showToast('Could not copy — select and copy manually'));
+}
+
+function renderCompletedState(card, sentence, entry){
+  const { initial, rest } = dropInitial(sentence.latin);
+  const overall = entry.status;
+  const cls = overall === 'good' ? '' : (overall === 'mixed' ? 'mixed' : 'rough');
+  const headText = overall === 'good' ? 'Recte scriptum — well done' :
+                    overall === 'mixed' ? 'Fere recte — mixed results' :
+                    'Revidendum — worth another pass';
+
+  let itemsHtml = '';
+  (sentence.focus || []).forEach((f, i) => {
+    const good = entry.assessment.focus[i] === 'good';
+    itemsHtml += `<div class="item-fb"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;margin-right:6px;color:${good?'var(--sage)':'var(--rubric)'}">${good?'✓':'✗'}</span><span style="font-style:italic;font-weight:600">${escapeHtml(f.word)}</span> — you: ${escapeHtml(entry.answers.focus[i] || '(blank)')}</div>`;
+    itemsHtml += paradigmHtml(f.paradigm, f.hit);
+  });
+
+  card.innerHTML = `
+    <div class="attribution">${escapeHtml(sentence.author)} <span class="work">— ${escapeHtml(sentence.work)}</span></div>
+    <div class="sentence-block">
+      <div class="drop-cap">${escapeHtml(initial)}</div>
+      <div class="latin-text">${escapeHtml(rest)}</div>
+    </div>
+    <div class="word-count">completed today</div>
+    <div class="marginalia ${cls}">
+      <div class="marginalia-head">${headText}</div>
+      ${itemsHtml}
+      <div class="translation-ref">
+        <div class="your-answer">Your translation: ${escapeHtml(entry.answers.translation || '(blank)')}</div>
+        <div class="ref-text">${escapeHtml(sentence.ref)}</div>
+      </div>
+    </div>
+    <div class="copy-row">
+      <button class="ghost small" id="copyBtn">Copy check-in</button>
+    </div>
+  `;
+  document.getElementById('copyBtn').addEventListener('click', () => copyCheckin(sentence, entry));
+}
+
+function renderSkippedState(card, sentence){
+  const { initial, rest } = dropInitial(sentence.latin);
+  card.innerHTML = `
+    <div class="attribution">${escapeHtml(sentence.author)} <span class="work">— ${escapeHtml(sentence.work)}</span></div>
+    <div class="sentence-block">
+      <div class="drop-cap">${escapeHtml(initial)}</div>
+      <div class="latin-text">${escapeHtml(rest)}</div>
+    </div>
+    <div class="word-count">skipped today</div>
+    <div class="reference-toggle" id="refToggle">Show reference translation</div>
+    <div class="reference-box" id="refBox">${escapeHtml(sentence.ref)}</div>
+  `;
+  document.getElementById('refToggle').addEventListener('click', () => {
+    document.getElementById('refBox').classList.toggle('show');
+  });
+}
+
+function renderForm(card, sentence){
+  const { initial, rest } = dropInitial(sentence.latin);
+
+  let focusRows = '';
+  sentence.focus.forEach((f, i) => {
+    focusRows += `
+      <div class="focus-row">
+        <div class="focus-word">${escapeHtml(f.word)}</div>
+        <input type="text" class="focus-input" data-idx="${i}" placeholder="case/tense, mood, person…" />
+      </div>
+    `;
+  });
+
+  card.innerHTML = `
+    <div class="attribution">${escapeHtml(sentence.author)} <span class="work">— ${escapeHtml(sentence.work)}</span></div>
+    <div class="sentence-block">
+      <div class="drop-cap">${escapeHtml(initial)}</div>
+      <div class="latin-text">${escapeHtml(rest)}</div>
+    </div>
+    <div class="word-count">${sentence.latin.split(/\s+/).length} words</div>
+
+    <div class="section-label">Parse</div>
+    ${focusRows}
+
+    <div class="section-label">Translatio</div>
+    <textarea id="translationInput" placeholder="Your English translation…"></textarea>
+
+    <div class="submit-row">
+      <button id="revealBtn">Reveal & self-check</button>
+      <button id="skipBtn" class="ghost">Skip today</button>
+    </div>
+    <div id="revealHost"></div>
+  `;
+
+  document.getElementById('revealBtn').addEventListener('click', () => {
+    const inputs = Array.from(document.querySelectorAll('.focus-input'));
+    const focusAnswers = inputs.map(inp => inp.value.trim());
+    const translation = document.getElementById('translationInput').value.trim();
+    renderReveal(sentence, focusAnswers, translation);
+  });
+
+  document.getElementById('skipBtn').addEventListener('click', () => {
+    const key = todayKey();
+    history[key] = { status: 'skipped', submittedAt: new Date().toISOString() };
+    saveHistory(history);
+    renderStreak();
+    renderSkippedState(card, sentence);
+  });
+}
+
+function renderReveal(sentence, focusAnswers, translation){
+  const host = document.getElementById('revealHost');
+  const assessment = { focus: new Array(sentence.focus.length).fill(null), translation: null };
+
+  let itemsHtml = '';
+  sentence.focus.forEach((f, i) => {
+    itemsHtml += `
+      <div class="reveal-item">
+        <div class="w">${escapeHtml(f.word)}</div>
+        <div class="your-answer">You wrote: ${escapeHtml(focusAnswers[i] || '(blank)')}</div>
+        <div class="parse-ref">${escapeHtml(f.parse)}</div>
+        ${paradigmHtml(f.paradigm, f.hit)}
+        <div class="self-check" data-idx="${i}">
+          <button type="button" data-val="good">Got it</button>
+          <button type="button" data-val="bad">Missed it</button>
+        </div>
+      </div>
+    `;
+  });
+
+  host.innerHTML = `
+    <div class="reveal-box">
+      <div class="reveal-head">Reference</div>
+      ${itemsHtml}
+      <div class="translation-ref">
+        <div class="your-answer">You wrote: ${escapeHtml(translation || '(blank)')}</div>
+        <div class="ref-text">${escapeHtml(sentence.ref)}</div>
+        <div class="self-check" data-idx="translation">
+          <button type="button" data-val="good">Got it</button>
+          <button type="button" data-val="bad">Missed it</button>
+        </div>
+      </div>
+      <div class="finish-row">
+        <button id="finishBtn" disabled>Log today's check-in</button>
+      </div>
+    </div>
+  `;
+
+  host.querySelectorAll('.self-check').forEach(row => {
+    row.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        row.querySelectorAll('button').forEach(b => b.classList.remove('chosen-good','chosen-bad'));
+        btn.classList.add(btn.dataset.val === 'good' ? 'chosen-good' : 'chosen-bad');
+        const idx = row.dataset.idx;
+        if(idx === 'translation'){ assessment.translation = btn.dataset.val; }
+        else { assessment.focus[parseInt(idx,10)] = btn.dataset.val; }
+        const allFocusDone = assessment.focus.every(v => v !== null);
+        document.getElementById('finishBtn').disabled = !(allFocusDone && assessment.translation !== null);
+      });
+    });
+  });
+
+  document.getElementById('finishBtn').addEventListener('click', () => {
+    const goodCount = assessment.focus.filter(v => v === 'good').length + (assessment.translation === 'good' ? 1 : 0);
+    const total = assessment.focus.length + 1;
+    let status;
+    if(goodCount === total) status = 'good';
+    else if(goodCount === 0) status = 'rough';
+    else status = 'mixed';
+
+    const key = todayKey();
+    const entry = {
+      status,
+      answers: { focus: focusAnswers, translation },
+      assessment,
+      submittedAt: new Date().toISOString()
+    };
+    history[key] = entry;
+    saveHistory(history);
+    mirrorCompletion(key);
+    renderStreak();
+    renderCompletedState(document.getElementById('card'), sentence, entry);
+  });
+}
+
+/* ---------- PWA: service worker + reminders ---------- */
+async function registerSW(){
+  if(!('serviceWorker' in navigator)) return null;
+  try{
+    return await navigator.serviceWorker.register('sw.js');
+  } catch(e){ return null; }
+}
+
+async function enableReminders(){
+  const btn = document.getElementById('reminderBtn');
+  if(!('Notification' in window)){
+    showToast('Notifications not supported in this browser');
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  if(perm !== 'granted'){
+    showToast('Notification permission was not granted');
+    return;
+  }
+  const reg = await navigator.serviceWorker.ready;
+  let periodicOk = false;
+  if('periodicSync' in reg){
+    try{
+      const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
+      if(status.state === 'granted'){
+        await reg.periodicSync.register('lectio-reminder', { minInterval: 20 * 60 * 60 * 1000 });
+        periodicOk = true;
+      }
+    } catch(e){ /* not available */ }
+  }
+  localStorage.setItem('lectio_reminders', 'on');
+  btn.textContent = 'Daily reminder on';
+  btn.disabled = true;
+  if(periodicOk){
+    showToast('Reminders enabled — you\'ll get a nudge on days you haven\'t done the sentence');
+  } else {
+    showToast('Notifications on, but this browser can\'t schedule daily background reminders — pair with a phone alarm');
+  }
+}
+
+function initReminderButton(){
+  const btn = document.getElementById('reminderBtn');
+  if(localStorage.getItem('lectio_reminders') === 'on' && Notification.permission === 'granted'){
+    btn.textContent = 'Daily reminder on';
+    btn.disabled = true;
+  }
+  btn.addEventListener('click', enableReminders);
+}
+
+function init(){
+  renderStreak();
+  const sentence = sentenceForToday();
+  const card = document.getElementById('card');
+  const key = todayKey();
+  const entry = history[key];
+
+  if(entry && entry.status === 'skipped'){
+    renderSkippedState(card, sentence);
+  } else if(entry && entry.answers){
+    renderCompletedState(card, sentence, entry);
+  } else {
+    renderForm(card, sentence);
+  }
+
+  registerSW();
+  initReminderButton();
+}
+
+init();
+</script>
+</body>
+</html>
